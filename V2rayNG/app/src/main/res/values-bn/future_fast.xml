@@ -50,4 +50,7 @@
     <string name="ff_upstream_link">Upstream project and contributors</string>
     <string name="ff_custom_interval">Custom interval in minutes</string>
     <string name="ff_interval_invalid">Enter a whole number from 15 to 10080.</string>
+    <string name="ff_auto_summary">Keep your services up to date and responsive</string>
+    <string name="ff_auto_on">Automatic selection is on</string>
+    <string name="ff_auto_off">Automatic selection is off</string>
 </resources>

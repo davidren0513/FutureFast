@@ -50,4 +50,7 @@
     <string name="ff_upstream_link">原项目与贡献者</string>
     <string name="ff_custom_interval">自定义间隔（分钟）</string>
     <string name="ff_interval_invalid">请输入 15 至 10080 之间的整数。</string>
+    <string name="ff_auto_summary">讓線路保持更新與流暢</string>
+    <string name="ff_auto_on">自動優選已開啟</string>
+    <string name="ff_auto_off">自動優選未開啟</string>
 </resources>
