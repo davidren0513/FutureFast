@@ -1,6 +1,8 @@
 """Capture actual preview screens without importing credentials or sample servers."""
 from pathlib import Path
 import re
+import base64
+import shutil
 import subprocess
 import time
 import xml.etree.ElementTree as ET
@@ -47,6 +49,14 @@ def snapshot(name):
 def capture(name):
     root = snapshot(name)
     (OUT / (name + ".png")).write_bytes(adb("exec-out", "screencap", "-p"))
+    # Compact screenshots in CI logs let reviewers inspect pixels when artifact download
+    # is unavailable. Full-resolution originals remain in the normal smoke artifact.
+    if shutil.which("ffmpeg"):
+        preview = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(OUT / (name + ".png")),
+                                  "-vf", "scale=432:-1", "-frames:v", "1", "-q:v", "4",
+                                  "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1"],
+                                 capture_output=True, timeout=25, check=True)
+        print("FF_PREVIEW:" + name + ":" + base64.b64encode(preview.stdout).decode(), flush=True)
     return root
 
 def tap_label(label):
