@@ -141,7 +141,8 @@ internal fun FutureFastNavigation(backdrop: Backdrop, page: String, onSelect: (S
                     Column(Modifier.weight(1f).heightIn(min = 64.dp)
                         .clip(CircleShape)
                         .border(if (focused) 2.dp else 0.dp,
-                            if (focused) Color(0xFF287BFA) else Color.Transparent, CircleShape)
+                            if (focused) { if (selected) Color.White else Color(0xFF287BFA) }
+                            else Color.Transparent, CircleShape)
                         .selectable(selected, interactionSource = interactions[tabIndex],
                             indication = null, role = Role.Tab, onClick = { onSelect(id) })
                         .semantics(mergeDescendants = true) {}
