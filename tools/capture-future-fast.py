@@ -20,6 +20,20 @@ def snapshot(name):
         result = subprocess.run(["adb", "shell", "cat", "/sdcard/ff-window.xml"], capture_output=True, timeout=10)
         if result.returncode == 0 and b"<hierarchy" in result.stdout:
             xml = result.stdout
+            root = ET.fromstring(xml)
+            # API 35 CI emulator: its Quickstep launcher may ANR during cold boot.
+            # Close only that launcher dialog; never dismiss an application ANR.
+            # Remove when the emulator image no longer exhibits this cold-boot failure.
+            if any(n.get("text") == "Quickstep isn't responding" for n in root.iter("node")):
+                (OUT / ("launcher-anr-" + str(attempt) + ".xml")).write_bytes(xml)
+                close = next(n for n in root.iter("node") if n.get("resource-id") == "android:id/aerr_close")
+                x1, y1, x2, y2 = map(int, re.findall(r"\d+", close.get("bounds", "")))
+                adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
+                time.sleep(2)
+                continue
+            if not any(n.get("package") == "tech.future.fast" for n in root.iter("node")):
+                time.sleep(2)
+                continue
             break
         time.sleep(2)
     else:
@@ -38,7 +52,7 @@ def capture(name):
 def tap_label(label):
     root = snapshot("navigation")
     for node in root.iter("node"):
-        text = node.get("text", "") + "\n" + node.get("content-desc", "")
+        text = "\n".join(n.get("text", "") + "\n" + n.get("content-desc", "") for n in node.iter("node"))
         if label in text and node.get("clickable") == "true":
             x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds", "")))
             adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
