@@ -74,7 +74,8 @@ def navigation(root, selected):
     tabs = {}
     for node in root.iter("node"):
         texts = [n.get("text") for n in node.iter("node") if n.get("text")]
-        if node.get("clickable") == "true" and len(texts) == 1 and texts[0] in ("连接", "节点", "AI 分流"):
+        # Compose exposes the selected Tab as focusable/selected but not clickable in XML.
+        if node.get("focusable") == "true" and len(texts) == 1 and texts[0] in ("连接", "节点", "AI 分流"):
             previous = tabs.get(texts[0])
             top = int(re.findall(r"\d+", node.get("bounds", ""))[1])
             if previous is None or top > int(re.findall(r"\d+", previous.get("bounds", ""))[1]):
