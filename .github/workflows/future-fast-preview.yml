@@ -2,7 +2,7 @@ name: Future Fast Preview APK
 
 on:
   push:
-    branches: [master, feature/future-fast-preview]
+    branches: [master, feature/future-fast-preview, fix/liquid-glass-fidelity]
   workflow_dispatch:
 
 permissions:
@@ -75,6 +75,9 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:testPlaystoreDebugUnitTest --tests com.v2ray.ang.dto.FutureFastPolicyTest
           ./gradlew :app:testPlaystoreDebugUnitTest :app:compilePlaystoreDebugKotlin :app:assemblePlaystoreDebug :app:assembleFdroidDebug
+      - name: Lint visual changes
+        working-directory: V2rayNG
+        run: ./gradlew :app:lintPlaystoreDebug :app:lintFdroidDebug
       - name: Verify packaged native libraries and create checksums
         run: |
           python3 - <<'PY'
@@ -97,7 +100,7 @@ jobs:
       - name: Upload Future Fast preview
         uses: actions/upload-artifact@v7
         with:
-          name: FutureFast-0.1.0-preview
+          name: FutureFast-0.1.1-preview
           if-no-files-found: error
           path: |
             V2rayNG/app/build/outputs/apk/**/debug/*.apk
@@ -106,7 +109,7 @@ jobs:
       - name: Upload ARM64 phone APK
         uses: actions/upload-artifact@v7
         with:
-          name: FutureFast-0.1.0-arm64
+          name: FutureFast-0.1.1-arm64
           if-no-files-found: error
           path: V2rayNG/app/build/outputs/apk/playstore/debug/*arm64-v8a*.apk
           retention-days: 14
@@ -115,7 +118,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: FutureFast-test-reports
-          path: V2rayNG/app/build/reports/tests
+          path: |
+            V2rayNG/app/build/reports/tests
+            V2rayNG/app/build/reports/lint-results-*
           if-no-files-found: ignore
       - name: Enable emulator acceleration
         run: |
@@ -137,8 +142,7 @@ jobs:
             sleep 8
             adb shell pidof tech.future.fast
             mkdir -p smoke
-            adb shell screencap -p /sdcard/future-fast-home.png
-            adb pull /sdcard/future-fast-home.png smoke/
+            python3 tools/capture-future-fast.py
             adb logcat -b crash -d > smoke/crash.log
             test ! -s smoke/crash.log || ! grep -q 'FATAL EXCEPTION' smoke/crash.log
       - name: Upload emulator smoke evidence
