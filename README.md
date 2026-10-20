@@ -1,46 +1,107 @@
-# Future Fast
+<div align="center">
 
-由 **David Ren** 维护的 v2rayNG 定制分支，面向 Just My Socks（JMS）使用场景。
+# FutureFast
 
-- 项目地址：https://github.com/davidren0513/FutureFast
-- 上游项目：[2dust/v2rayNG](https://github.com/2dust/v2rayNG)
-- 原项目作者与贡献者：**2dust 及 v2rayNG contributors**
-- 开源许可证：[GNU GPL v3](LICENSE)；保留上游署名、版权声明与第三方许可证。
-- 本项目是独立社区定制版本，与 Just My Socks 及上游项目无官方隶属或背书关系。
+**让连接更简单。**
 
-## 当前状态
+由 **David Ren** 维护的免费 Android 客户端，面向 Just My Socks 使用场景。<br>
+液态玻璃界面 · 一键连接 · 自动管理节点 · AI 独立分流
 
-首个预览版本为 **Future Fast 0.1.0**。当前功能分支已加入液态玻璃首页、订阅定时更新设置、断开时真实延迟测速与节点优选、AI 独立节点和作者信息；以 GitHub Actions 构建结果为准。尚未完成真机和真实 JMS 订阅验证。
+[下载预览版](#下载与安装) · [实际界面](#实际界面) · [功能说明](#功能说明) · [验证记录](docs/VALIDATION.md)
 
-预览 APK 由 [Future Fast Preview APK](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml) 构建并以 Artifact 提供。预览版使用测试签名，应用 ID 为 tech.future.fast，可与原版并存。自动更新和 AI 分流默认关闭，需用户配置。上游 APK 与签名不代表本项目。
+[![Android build](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml/badge.svg?branch=master)](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml)
+![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B-3DDC84)
+![Preview 0.1.0](https://img.shields.io/badge/Preview-0.1.0-2878FF)
+[![License GPL v3](https://img.shields.io/badge/License-GPLv3-blue)](LICENSE)
 
-## 已确定的改造方向
+</div>
 
-| 页面／能力 | 目标 |
+## 实际界面
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="300" alt="FutureFast 0.1.0 实际连接首页：中央连接按钮、下次连接节点、自动管理及底部导航">
+</p>
+
+<p align="center"><sub>0.1.0 预览版 · Android 35 模拟器实际截图 · 英文系统 · 尚未导入节点</sub></p>
+
+首页把连接操作放在中央：点击大按钮连接或断开，下方显示当前或下次使用的节点。节点管理和 AI 分流从底部进入，自动管理从首页卡片进入。
+
+截图来自[成功构建与启动检查](https://github.com/davidren0513/FutureFast/actions/runs/39394813378)，没有使用虚构节点或演示延迟。截图来源与环境见[截图说明](docs/screenshots/README.md)。
+
+## 下载与安装
+
+当前提供 **FutureFast 0.1.0 预览版**，尚未发布正式稳定版。
+
+| 下载入口 | 用途 |
 | --- | --- |
-| 连接首页 | 液态玻璃风格；中央连接／断开按钮；下方显示当前或下次使用的节点 |
-| 节点与订阅 | 保留现有能力，将低频入口放入高级设置；完整导入 JMS 参数 |
-| 自动管理 | 分别配置订阅更新与测速间隔；仅在代理断开时测速并选择最快可用节点 |
-| AI 分流 | ChatGPT、Claude、Gemini 等可独立指定节点，不受普通线路自动优选覆盖 |
-| 关于 | 显示 David Ren、项目链接、上游署名、开源许可与免责声明 |
+| [ARM64 手机预览包](https://github.com/davidren0513/FutureFast/actions/runs/39394813378/artifacts/12251237917) | 大多数现代 Android 手机；ZIP 内包含 APK |
+| [最新构建列表](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml) | 选择成功的构建，在 Artifacts 中下载 `FutureFast-0.1.0-arm64` |
+| [完整构建与其他架构](https://github.com/davidren0513/FutureFast/actions/runs/39394813378) | `FutureFast-0.1.0-preview` 包含各架构 APK 和 SHA256SUMS |
 
-具体行为、验收条件和官方资料见 [JMS 适配与开发计划](docs/JMS_CUSTOMIZATION.md)。
+GitHub Artifacts 下载需要登录 GitHub，当前保存 14 天。固定下载链接过期后，请从最新成功构建获取。
 
-## 作者信息与免责声明
+1. 下载并解压 ZIP，在 Android 手机上安装适合设备架构的 APK。
+2. 打开 Future Fast，粘贴你自己的订阅地址，或扫描节点二维码。
+3. 在“节点”中确认导入结果，回到首页点击连接，按系统提示授予 VPN 权限。
+4. 按需开启自动管理，或为 AI 服务指定节点。
 
-定制设计与维护：**David Ren**。
+最低支持 **Android 7.0**。预览包使用测试签名；Play Store 构建变体的应用 ID 为 `tech.future.fast`，可与原版 v2rayNG 并存。这里的构建变体名称不代表已上架 Google Play。本应用不附带订阅、服务器或 AI 账户。
 
-本项目基于 v2rayNG 修改，原项目作者与贡献者为 2dust 及 v2rayNG contributors；各第三方组件归其原作者所有。应用“关于”页面将以较小但清晰可读的文字保留上游署名，并提供原项目与开源许可入口。
+## 功能说明
 
-本应用无偿提供，仅供访问业务内容所需。请遵守您所在国家或地区的法律法规，不得将本应用用于任何非法用途。本项目提供客户端软件，不提供代理服务器、JMS 账号或 AI 服务账号。用户需自行配置有权使用的服务，并遵守服务条款。节点延迟、连通性与 AI 服务可用性取决于网络、服务提供商及第三方平台，不保证持续可用。软件按随附开源许可证提供，不作该许可证以外的保证；本说明不限制许可证授予的权利。
+| 功能 | 0.1.0 预览版行为 |
+| --- | --- |
+| 液态玻璃首页 | 简化连接操作；Android 13 及以上使用模糊与折射，较旧系统使用半透明效果 |
+| 一键连接 / 断开 | 中央大按钮控制连接，下方显示节点 |
+| 订阅自动更新 | 可设置更新间隔；成功导入后才记录更新时间 |
+| 断开时节点优选 | 按设置间隔测试真实出站延迟，为下次连接选择最快的有效节点；活动连接期间暂停 |
+| AI 独立分流 | ChatGPT、Claude、Gemini 可分别指定节点，或跟随默认节点；配置变更需重新连接 |
+| 保留高级功能 | 原节点管理、路由与高级设置仍可访问，首版保留这些页面的原有布局 |
+| 导入保护 | 检测 HTML 错误页和不兼容的 Clash YAML 响应，避免把这些内容当作普通节点订阅导入 |
 
-订阅链接、节点凭据和导出配置可能包含敏感信息，请勿提交到公开仓库、问题报告或截图中。
+订阅更新和自动优选默认关闭。间隔支持 **15–10080 分钟**，后台实际执行时间受 Android 调度、省电策略和网络状态影响。单个节点的测速超时由现有 Xray 核心控制，当前未提供自定义硬超时。
+
+AI 分流按已配置的域名规则工作。指定节点丢失时，对匹配流量采用阻断策略；订阅刷新后的节点匹配仅在结果明确时恢复。节点延迟低不代表某个 AI 平台一定可用。
+
+## Just My Socks 使用说明
+
+- 使用适用于本客户端的普通节点订阅；专用 Mihomo / Clash.Meta YAML 订阅不适用。
+- 节点地址或协议变化时，优先刷新订阅，避免长期依赖手动填写的旧地址。
+- AI 服务可以单独指定你确认可用的节点，普通流量继续使用默认节点。
+- 本项目与 Just My Socks 没有官方合作或隶属关系。
+
+官方资料来源及设计背景见 [JMS 适配与开发计划](docs/JMS_CUSTOMIZATION.md)。该文档保留初期需求与规划，当前实现和验证状态以本页及验证记录为准。
+
+## 预览版状态
+
+[2026-10-20 构建](https://github.com/davidren0513/FutureFast/actions/runs/39394813378)已通过单元测试、Kotlin 编译、Play Store / F-Droid 两种变体打包、原生库打包检查，以及 Android 模拟器安装与启动检查。
+
+真实 JMS 订阅、AI 平台访问、后台长时间运行及完整 VPN / 仅代理 / root 场景仍需设备验证。当前液态玻璃改造集中在连接、自动管理和 AI 分流页面。详细测试命令、对应提交和 **Not run** 项目见[验证记录](docs/VALIDATION.md)。
+
+## 作者与开源致谢
+
+**定制与维护：David Ren**<br>
+GitHub：[davidren0513/FutureFast](https://github.com/davidren0513/FutureFast)
+
+<sub>基于 [2dust/v2rayNG](https://github.com/2dust/v2rayNG) 修改。原项目作者与贡献者：2dust 及 v2rayNG contributors。感谢 [Xray-core](https://github.com/XTLS/Xray-core)、[AndroidLibXrayLite](https://github.com/2dust/AndroidLibXrayLite)、[HEV Socks5 Tunnel](https://github.com/heiher/hev-socks5-tunnel) 与 [Kyant0/AndroidLiquidGlass](https://github.com/Kyant0/AndroidLiquidGlass) / Backdrop。原有版权和各依赖许可证继续保留。</sub>
+
+项目遵循 [GNU GPL v3](LICENSE)。[上游原始 README](docs/UPSTREAM_README.md) 保留为参考，其中上游的发布地址、签名和社区信息不代表 FutureFast。
+
+## 免责声明
+
+**本应用无偿提供，仅供访问业务内容所需。请遵守您所在国家或地区的法律法规，不得将本应用用于任何非法用途。**
+
+本项目提供客户端软件，不提供代理服务器、JMS 账号或 AI 服务账号。请自行配置有权使用的服务，并遵守相关服务条款。软件按随附开源许可证提供；本说明不限制许可证授予的权利。
+
+请勿将订阅链接、节点密码、私钥或含有这些信息的日志和截图提交到公开仓库。
 
 ## 开发与维护
 
-- 使用独立分支与 PR 维护定制修改，明确区分规划、已实现和已验证的行为。
-- 上游更新先检查协议、核心和存储兼容性，再合入本分支。
-- 发布时提供对应源码、版本变更、构建来源与本项目自己的签名说明。
-- 上游开发资料保存在 [原始 README](docs/UPSTREAM_README.md)，仅作为上游参考，不代表本分支的发布或验证状态。
+Android 工程位于 `V2rayNG/`。首次构建需要递归初始化子模块，并按[预览构建工作流](.github/workflows/future-fast-preview.yml)准备 HEV 原生库与匹配源码版本的 Xray AAR。
 
-完整许可证见 [LICENSE](LICENSE)。
+```sh
+git clone --recursive https://github.com/davidren0513/FutureFast.git
+cd FutureFast
+```
+
+JDK、SDK、NDK 和依赖版本以仓库中的工作流及 Gradle 配置为准。变更通过分支和 PR 记录，说明实现范围、测试结果和未验证项目。
