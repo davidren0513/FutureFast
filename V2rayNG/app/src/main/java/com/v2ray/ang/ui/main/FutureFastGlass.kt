@@ -1,7 +1,6 @@
 package com.v2ray.ang.ui.main
 
 import android.os.Build
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -17,6 +16,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -29,9 +29,11 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
@@ -79,6 +81,8 @@ internal fun FutureFastNavigation(backdrop: Backdrop, page: String, onSelect: (S
     val press by animateFloatAsState(
         if (homePressed || nodesPressed || aiPressed || dragPosition != null) 1f else 0f,
         spring(dampingRatio = 0.65f, stiffness = 380f), label = "navigation-press")
+    val blue by animateFloatAsState(if (page == "home") 1f else 0f,
+        tween(180), label = "navigation-coating")
     LaunchedEffect(index, dragPosition) {
         val drag = dragPosition
         if (drag != null) position.snapTo(drag)
@@ -90,28 +94,40 @@ internal fun FutureFastNavigation(backdrop: Backdrop, page: String, onSelect: (S
     val barBackdrop = rememberLayerBackdrop()
     val lensBackdrop = rememberCombinedBackdrop(backdrop, barBackdrop)
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
-        val tabWidth = (maxWidth - 12.dp) / 3
-        val tabPx = with(LocalDensity.current) { tabWidth.toPx() }
+        val density = LocalDensity.current
+        val tabWidth = (maxWidth - 8.dp) / 3
+        val tabPx = with(density) { tabWidth.toPx() }
+        var barHeightPx by remember { mutableIntStateOf(0) }
+        val barHeight = with(density) { barHeightPx.toDp() }.coerceAtLeast(72.dp)
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        Box(Modifier.fillMaxWidth().height(76.dp)
+        Box(Modifier.fillMaxWidth().height(barHeight)
             .graphicsLayer {
                 scaleX = 1f + press * 0.018f
                 scaleY = 1f + press * 0.035f
             }
             .layerBackdrop(barBackdrop)
             .navigationGlass(backdrop, selected = false, press = { press })
-            .clearAndSetSemantics {})
+            .clearAndSetSemantics {}) {
+            Canvas(Modifier.fillMaxSize()) {
+                for (divider in 1..2) {
+                    val x = 4.dp.toPx() + divider * tabPx
+                    drawLine(ink.copy(alpha = 0.08f), Offset(x, size.height / 2f - 12.dp.toPx()),
+                        Offset(x, size.height / 2f + 12.dp.toPx()), 0.6.dp.toPx())
+                }
+            }
+        }
         // A single lens moves between destinations; it is never recreated per selected tab.
-        Box(Modifier.padding(horizontal = 6.dp).width(tabWidth).height(64.dp)
+        Box(Modifier.padding(horizontal = 4.dp).width(tabWidth).height(barHeight - 8.dp)
             .graphicsLayer {
                 translationX = position.value * tabPx * if (rtl) -1f else 1f
                 val stretch = (abs(position.velocity) * 0.018f).coerceIn(0f, 0.16f)
                 scaleX = 1f + press * 0.075f + stretch
                 scaleY = 1f + press * 0.09f - stretch * 0.35f
             }
-            .navigationGlass(lensBackdrop, selected = true, press = { press })
+            .navigationGlass(lensBackdrop, selected = true, blue = blue, press = { press })
             .clearAndSetSemantics {})
         Row(Modifier.fillMaxWidth().selectableGroup()
+            .onSizeChanged { barHeightPx = it.height }
             .pointerInput(tabPx, rtl) {
                 detectHorizontalDragGestures(
                     onDragStart = {
@@ -129,19 +145,20 @@ internal fun FutureFastNavigation(backdrop: Backdrop, page: String, onSelect: (S
                             amount / tabPx * if (rtl) -1f else 1f).coerceIn(0f, 2f)
                     })
             }
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically) {
             tabs.forEachIndexed { tabIndex, id ->
                 key(id) {
                     val selected = page == id
                     val focused by interactions[tabIndex].collectIsFocusedAsState()
-                    val tint by animateColorAsState(
-                        if (selected) Color.White else ink.copy(alpha = if (dark) 0.82f else 0.68f),
-                        tween(180), label = "navigation-ink")
+                    // Keep the active ink under the moving lens, including while dragging.
+                    val activeTint = lerp(if (dark) Color(0xFF70B9FF) else Color(0xFF1675FF), Color.White, blue)
+                    val tint = lerp(ink.copy(alpha = if (dark) 0.82f else 0.68f), activeTint,
+                        (1f - abs(position.value - tabIndex)).coerceIn(0f, 1f))
                     Column(Modifier.weight(1f).heightIn(min = 64.dp)
                         .clip(CircleShape)
                         .border(if (focused) 2.dp else 0.dp,
-                            if (focused) { if (selected) Color.White else Color(0xFF287BFA) }
+                            if (focused) { if (selected && blue > 0.5f) Color.White else Color(0xFF287BFA) }
                             else Color.Transparent, CircleShape)
                         .selectable(selected, interactionSource = interactions[tabIndex],
                             indication = null, role = Role.Tab, onClick = { onSelect(id) })
@@ -149,11 +166,10 @@ internal fun FutureFastNavigation(backdrop: Backdrop, page: String, onSelect: (S
                         .padding(vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)) {
-                        GlassIcon(when (id) {
-                            "home" -> GlassGlyph.LINK
-                            "nodes" -> GlassGlyph.NODES
-                            else -> GlassGlyph.AI
-                        }, Modifier.size(25.dp), tint)
+                        if (id == "home") GlassIcon(GlassGlyph.LINK, Modifier.size(25.dp), tint)
+                        else Icon(painterResource(if (id == "nodes") R.drawable.ic_ff_dns_24dp
+                            else R.drawable.ic_ff_auto_awesome_24dp), contentDescription = null,
+                            modifier = Modifier.size(25.dp), tint = tint)
                         Text(stringResource(titles[tabIndex]), color = tint,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
@@ -173,11 +189,12 @@ internal fun futureFastDragDestination(position: Float): String = when {
 
 @Composable
 private fun Modifier.navigationGlass(backdrop: Backdrop, selected: Boolean,
-    press: () -> Float): Modifier {
+    blue: Float = 0f, press: () -> Float): Modifier {
     val dark = LocalDarkTheme.current
     val coating = if (selected) Brush.verticalGradient(listOf(
-        Color(0xFF6AD9FF).copy(alpha = 0.78f), Color(0xFF2584FA).copy(alpha = 0.85f),
-        Color(0xFF3268EC).copy(alpha = 0.78f)))
+        lerp(Color.White.copy(alpha = if (dark) 0.16f else 0.28f), Color(0xFF6AD9FF).copy(alpha = 0.78f), blue),
+        lerp(Color(0xFFBDE7FF).copy(alpha = 0.04f), Color(0xFF2584FA).copy(alpha = 0.85f), blue),
+        lerp(Color.White.copy(alpha = if (dark) 0.08f else 0.14f), Color(0xFF3268EC).copy(alpha = 0.78f), blue)))
     else Brush.verticalGradient(listOf(
         Color.White.copy(alpha = if (dark) 0.13f else 0.52f),
         Color(0xFFC5E2FF).copy(alpha = if (dark) 0.08f else 0.16f),

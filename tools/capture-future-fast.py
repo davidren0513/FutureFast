@@ -2,10 +2,11 @@
 from pathlib import Path
 import re
 import base64
-import shutil
+import io
 import subprocess
 import time
 import xml.etree.ElementTree as ET
+from PIL import Image
 
 OUT = Path("smoke")
 OUT.mkdir(exist_ok=True)
@@ -40,23 +41,36 @@ def snapshot(name):
         time.sleep(2)
     else:
         (OUT / "failure-screen.png").write_bytes(adb("exec-out", "screencap", "-p"))
-        (OUT / "failure-logcat.txt").write_bytes(adb("logcat", "-d", "-t", "1500"))
-        (OUT / "failure-window.txt").write_bytes(adb("shell", "dumpsys", "window"))
+        preview("failure", OUT / "failure-screen.png")
+        log = adb("logcat", "-d", "-t", "1500")
+        window = adb("shell", "dumpsys", "window")
+        (OUT / "failure-logcat.txt").write_bytes(log)
+        (OUT / "failure-window.txt").write_bytes(window)
+        # This fixture is a fresh install with no imported credentials or profiles.
+        print("FF_FAILURE_DIAGNOSTICS", flush=True)
+        for line in log.decode(errors="replace").splitlines():
+            if any(key in line for key in ("AndroidRuntime", "ANR", "am_anr", "FATAL", "InputDispatcher", "tech.future.fast")):
+                print(line, flush=True)
+        for line in window.decode(errors="replace").splitlines():
+            if any(key in line for key in ("mCurrentFocus", "mFocusedApp", "mDisplayFrozen")):
+                print(line, flush=True)
         raise AssertionError("No accessibility root after locale restart")
     (OUT / (name + ".xml")).write_bytes(xml)
     return ET.fromstring(xml)
 
+def preview(name, path):
+    # Full-resolution originals remain in the normal smoke artifact.
+    with Image.open(path) as frame:
+        frame.thumbnail((432, 960))
+        output = io.BytesIO()
+        frame.convert("RGB").save(output, format="JPEG", quality=80)
+    print("FF_PREVIEW:" + name + ":" + base64.b64encode(output.getvalue()).decode(), flush=True)
+
 def capture(name):
     root = snapshot(name)
-    (OUT / (name + ".png")).write_bytes(adb("exec-out", "screencap", "-p"))
-    # Compact screenshots in CI logs let reviewers inspect pixels when artifact download
-    # is unavailable. Full-resolution originals remain in the normal smoke artifact.
-    if shutil.which("ffmpeg"):
-        preview = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(OUT / (name + ".png")),
-                                  "-vf", "scale=432:-1", "-frames:v", "1", "-q:v", "4",
-                                  "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1"],
-                                 capture_output=True, timeout=25, check=True)
-        print("FF_PREVIEW:" + name + ":" + base64.b64encode(preview.stdout).decode(), flush=True)
+    path = OUT / (name + ".png")
+    path.write_bytes(adb("exec-out", "screencap", "-p"))
+    preview(name, path)
     return root
 
 def tap_label(label):
@@ -158,6 +172,13 @@ adb("shell", "cmd", "uimode", "night", "yes")
 time.sleep(2)
 capture("future-fast-home-dark")
 adb("shell", "cmd", "uimode", "night", "no")
+time.sleep(2)
+adb("shell", "settings", "put", "system", "font_scale", "1.5")
+time.sleep(2)
+navigation(capture("future-fast-large-font"), "连接")
+adb("shell", "settings", "put", "system", "font_scale", "1.0")
+time.sleep(2)
+navigation(snapshot("font-restored-home"), "连接")
 adb("shell", "pidof", "tech.future.fast")
 crash = adb("logcat", "-b", "crash", "-d")
 (OUT / "crash.log").write_bytes(crash)

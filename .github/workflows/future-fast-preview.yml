@@ -128,6 +128,10 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Prepare compact screenshot evidence
+        run: |
+          python3 -m venv "$RUNNER_TEMP/future-fast-visual"
+          "$RUNNER_TEMP/future-fast-visual/bin/pip" install Pillow==12.0.0
       - name: Launch smoke test on Android
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -143,7 +147,7 @@ jobs:
             sleep 8
             adb shell pidof tech.future.fast
             mkdir -p smoke
-            python3 tools/capture-future-fast.py
+            "${{ runner.temp }}/future-fast-visual/bin/python" tools/capture-future-fast.py
             adb logcat -b crash -d > smoke/crash.log
             test ! -s smoke/crash.log || ! grep -q 'FATAL EXCEPTION' smoke/crash.log
       - name: Upload emulator smoke evidence

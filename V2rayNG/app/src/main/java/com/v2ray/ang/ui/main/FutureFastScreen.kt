@@ -66,7 +66,7 @@ fun FutureFastScreen(
                         if (page != "automation") {
                             FutureFastNavigation(backdrop, page, onSelect = { page = it },
                                 modifier = Modifier.navigationBarsPadding()
-                                    .padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth())
+                                    .padding(horizontal = 28.dp, vertical = 12.dp).fillMaxWidth())
                         }
                     }
                 ) { padding ->
