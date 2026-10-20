@@ -52,8 +52,8 @@ def capture(name):
 def tap_label(label):
     root = snapshot("navigation")
     for node in root.iter("node"):
-        text = "\n".join(n.get("text", "") + "\n" + n.get("content-desc", "") for n in node.iter("node"))
-        if label in text and node.get("clickable") == "true":
+        matches = any(label in (n.get("text", ""), n.get("content-desc", "")) for n in node.iter("node"))
+        if matches and node.get("clickable") == "true":
             x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds", "")))
             adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
             time.sleep(1)
@@ -64,10 +64,13 @@ def navigation(root, selected):
     tabs = {}
     for node in root.iter("node"):
         texts = [n.get("text") for n in node.iter("node") if n.get("text")]
-        if node.get("clickable") == "true" and len(texts) == 1 and texts[0] in ("首页", "节点", "AI 分流"):
-            assert texts[0] not in tabs, "Duplicate navigation target: " + texts[0]
-            tabs[texts[0]] = node
-    assert set(tabs) == {"首页", "节点", "AI 分流"}, "Navigation disappeared: " + str(tabs.keys())
+        if node.get("clickable") == "true" and len(texts) == 1 and texts[0] in ("连接", "节点", "AI 分流"):
+            previous = tabs.get(texts[0])
+            top = int(re.findall(r"\d+", node.get("bounds", ""))[1])
+            if previous is None or top > int(re.findall(r"\d+", previous.get("bounds", ""))[1]):
+                tabs[texts[0]] = node
+    assert set(tabs) == {"连接", "节点", "AI 分流"}, "Navigation disappeared: " + str(tabs.keys())
+    assert len({re.findall(r"\d+", n.get("bounds", ""))[1] for n in tabs.values()}) == 1
     assert [label for label, node in tabs.items() if node.get("selected") == "true"] == [selected]
     return {label: tuple(map(int, re.findall(r"\d+", node.get("bounds", "")))) for label, node in tabs.items()}
 
@@ -95,22 +98,22 @@ adb("shell", "cmd", "locale", "set-app-locales", "tech.future.fast", "--user", "
 adb("shell", "am", "force-stop", "tech.future.fast")
 adb("shell", "am", "start", "-W", "-n", "tech.future.fast/com.v2ray.ang.ui.main.MainActivity")
 time.sleep(8)
-nav_bounds = navigation(capture("future-fast-home"), "首页")
+nav_bounds = navigation(capture("future-fast-home"), "连接")
 tap_label("节点")
 assert navigation(capture("future-fast-nodes"), "节点") == nav_bounds
 tap_label("AI 分流")
 assert navigation(capture("future-fast-ai"), "AI 分流") == nav_bounds
-tap_label("首页")
-assert navigation(snapshot("roundtrip-home"), "首页") == nav_bounds
+tap_label("连接")
+assert navigation(snapshot("roundtrip-home"), "连接") == nav_bounds
 
 # Keep system animations enabled and record real lens movement, including drag/release.
 recording = subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "22",
                               "--bit-rate", "4000000", "/sdcard/future-fast-navigation.mp4"])
 time.sleep(1)
-for label in ("节点", "AI 分流", "首页", "AI 分流", "节点", "首页"):
+for label in ("节点", "AI 分流", "连接", "AI 分流", "节点", "连接"):
     tap_bounds(nav_bounds[label])
     time.sleep(0.8)
-home = nav_bounds["首页"]
+home = nav_bounds["连接"]
 ai = nav_bounds["AI 分流"]
 adb("shell", "input", "swipe", str((home[0]+home[2])//2), str((home[1]+home[3])//2),
     str((ai[0]+ai[2])//2), str((ai[1]+ai[3])//2), "900")
@@ -118,7 +121,7 @@ time.sleep(1)
 navigation(snapshot("drag-to-ai"), "AI 分流")
 recording.wait(timeout=30)
 (OUT / "future-fast-navigation.mp4").write_bytes(adb("exec-out", "cat", "/sdcard/future-fast-navigation.mp4"))
-tap_label("首页")
+tap_label("连接")
 
 # A theme configuration change recreates the Activity. Restore the selected destination.
 tap_label("节点")
@@ -129,7 +132,9 @@ adb("shell", "cmd", "uimode", "night", "no")
 time.sleep(2)
 navigation(snapshot("nodes-restored-light"), "节点")
 focus_tab("AI 分流", "KEYCODE_TAB", "KEYCODE_ENTER")
-focus_tab("首页", "KEYCODE_DPAD_LEFT", "KEYCODE_DPAD_CENTER")
+focus_tab("连接", "KEYCODE_DPAD_LEFT", "KEYCODE_DPAD_CENTER")
+focus_tab("节点", "KEYCODE_TAB", "KEYCODE_SPACE")
+tap_label("连接")
 tap_label("自动管理")
 capture("future-fast-automation")
 adb("shell", "input", "keyevent", "4")
