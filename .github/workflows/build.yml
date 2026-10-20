@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   build:
+    if: github.repository == '2dust/v2rayNG'
     runs-on: ubuntu-latest
 
     steps:

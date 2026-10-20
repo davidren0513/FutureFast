@@ -108,7 +108,7 @@ object FutureFastOptimizer {
             val fastest = FutureFastPolicy.fastest(results, valid)
             // Recheck immediately before publishing. An active session is never restarted here.
             if (!mayContinue(revision)) return
-            if (fastest != null) MmkvManager.setSelectServer(fastest)
+            if (fastest != null && !MmkvManager.selectFutureFastServer(fastest, selectedBefore, revision)) return
             MmkvManager.updateFutureFastPreferences {
                 it.copy(lastTestAt = System.currentTimeMillis(), lastTestOutcome = if (fastest == null) "none" else "selected")
             }

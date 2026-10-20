@@ -39,7 +39,10 @@ data class FutureFastUiState(
     val loading: Boolean = true,
 )
 
+data class FutureFastIntervalInput(val text: String = "", val minutes: Long? = null)
+
 sealed interface FutureFastAction {
+    data class IntervalInput(val text: String) : FutureFastAction
     data class AutoSelect(val enabled: Boolean) : FutureFastAction
     data class TestInterval(val minutes: Long) : FutureFastAction
     data class AiEnabled(val enabled: Boolean) : FutureFastAction
@@ -54,6 +57,8 @@ class FutureFastViewModel(application: Application) : AndroidViewModel(applicati
     private val settingsMutex = Mutex()
     private val _error = MutableStateFlow<Int?>(null)
     val error = _error.asStateFlow()
+    private val _intervalInput = MutableStateFlow(FutureFastIntervalInput())
+    val intervalInput = _intervalInput.asStateFlow()
     val state = flow {
         while (true) {
             try {
@@ -111,6 +116,11 @@ class FutureFastViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun onAction(action: FutureFastAction) {
+        if (action is FutureFastAction.IntervalInput) {
+            val minutes = action.text.toLongOrNull()?.takeIf { it in 15..10080 }
+            _intervalInput.value = FutureFastIntervalInput(action.text, minutes)
+            return
+        }
         if (action == FutureFastAction.DismissError) {
             _error.value = null
             return
@@ -119,6 +129,7 @@ class FutureFastViewModel(application: Application) : AndroidViewModel(applicati
             settingsMutex.withLock {
                 try {
                     when (action) {
+                        is FutureFastAction.IntervalInput -> Unit
                         is FutureFastAction.AutoSelect -> {
                             MmkvManager.updateFutureFastPreferences { it.copy(autoSelect = action.enabled) }
                             FutureFastOptimizer.schedule(getApplication())

@@ -1,6 +1,7 @@
 package com.v2ray.ang.ui.main
 
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +50,7 @@ fun FutureFastScreen(
     val main by mainViewModel.uiState.collectAsStateWithLifecycle()
     val state by futureViewModel.state.collectAsStateWithLifecycle()
     val error by futureViewModel.error.collectAsStateWithLifecycle()
+    val intervalInput by futureViewModel.intervalInput.collectAsStateWithLifecycle()
     var page by rememberSaveable { mutableStateOf("home") }
     var aiPicker by rememberSaveable { mutableStateOf<String?>(null) }
     var intervalPicker by rememberSaveable { mutableStateOf<String?>(null) }
@@ -57,10 +59,11 @@ fun FutureFastScreen(
     val accent = Color(0xFF287BFA)
     val ink = if (dark) Color(0xFFEDF4FF) else Color(0xFF14294D)
     val action = futureViewModel::onAction
+    BackHandler(enabled = page != "home") { page = "home" }
 
     LaunchedEffect(state.selectedGuid) {
         // The selection may have changed in the background optimizer process.
-        mainViewModel.refreshSelectedGuid()
+        onAction(MainAction.RefreshSelectedServer)
     }
 
     CompositionLocalProvider(LocalContentColor provides ink) {
@@ -227,7 +230,13 @@ fun FutureFastScreen(
     }
     intervalPicker?.let { kind ->
         AlertDialog(onDismissRequest = { intervalPicker = null }, title = { Text(stringResource(R.string.ff_choose_interval)) },
-            text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+            text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()).imePadding()) {
+                OutlinedTextField(value = intervalInput.text,
+                    onValueChange = { action(FutureFastAction.IntervalInput(it)) },
+                    label = { Text(stringResource(R.string.ff_custom_interval)) },
+                    isError = intervalInput.text.isNotEmpty() && intervalInput.minutes == null,
+                    supportingText = { if (intervalInput.text.isNotEmpty() && intervalInput.minutes == null) Text(stringResource(R.string.ff_interval_invalid)) },
+                    singleLine = true)
                 listOf(15L, 30L, 60L, 180L, 360L, 720L, 1440L).forEach { minutes ->
                     TextButton(onClick = {
                         action(if (kind == "test") FutureFastAction.TestInterval(minutes)
@@ -235,7 +244,15 @@ fun FutureFastScreen(
                         intervalPicker = null
                     }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ff_minutes, minutes)) }
                 }
-            } }, confirmButton = { TextButton(onClick = { intervalPicker = null }) { Text(stringResource(R.string.action_cancel)) } })
+            } }, confirmButton = {
+                TextButton(enabled = intervalInput.minutes != null, onClick = {
+                    intervalInput.minutes?.let { minutes ->
+                        action(if (kind == "test") FutureFastAction.TestInterval(minutes)
+                            else FutureFastAction.SubscriptionSchedule(state.subscriptionAuto, minutes))
+                        intervalPicker = null
+                    }
+                }) { Text(stringResource(R.string.action_ok)) }
+            }, dismissButton = { TextButton(onClick = { intervalPicker = null }) { Text(stringResource(R.string.action_cancel)) } })
     }
     error?.let { errorId -> AlertDialog(onDismissRequest = { action(FutureFastAction.DismissError) },
         text = { Text(stringResource(errorId)) }, confirmButton = { TextButton(onClick = { action(FutureFastAction.DismissError) }) { Text(stringResource(R.string.action_ok)) } }) }

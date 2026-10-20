@@ -2,7 +2,7 @@ name: Future Fast Preview APK
 
 on:
   push:
-    branches: [feature/future-fast-preview]
+    branches: [master, feature/future-fast-preview]
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - name: Check patch whitespace
-        run: git diff --check 118cf5bc7d0b290947b0827f5ad03e73018d8e5d HEAD -- . ':!docs/UPSTREAM_README.md'
+        run: |
+          git remote add upstream https://github.com/2dust/v2rayNG.git
+          test "$(git remote get-url upstream)" = https://github.com/2dust/v2rayNG.git
+          git fetch upstream master
+          test -z "$(git diff --name-only upstream/master -- ':(glob)**/AGENTS.md' ':(glob)**/CLAUDE.md' ':(glob)**/GEMINI.md' .github/copilot-instructions.md)"
+          test -z "$(git diff --cached --name-only -- ':(glob)**/AGENTS.md' ':(glob)**/CLAUDE.md' ':(glob)**/GEMINI.md' .github/copilot-instructions.md)"
+          test -z "$(git diff --name-only upstream/master...HEAD -- ':(glob)**/AGENTS.md' ':(glob)**/CLAUDE.md' ':(glob)**/GEMINI.md' .github/copilot-instructions.md)"
+          git diff --check 118cf5bc7d0b290947b0827f5ad03e73018d8e5d HEAD -- . ':!docs/UPSTREAM_README.md'
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -56,11 +63,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Cache preview signing identity
+        uses: actions/cache@v6
+        with:
+          path: ~/.android/debug.keystore
+          key: future-fast-preview-debug-keystore-v1
       - name: Test and assemble installable debug APKs
         working-directory: V2rayNG
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
           chmod +x gradlew
+          ./gradlew :app:testPlaystoreDebugUnitTest --tests com.v2ray.ang.dto.FutureFastPolicyTest
           ./gradlew :app:testPlaystoreDebugUnitTest :app:compilePlaystoreDebugKotlin :app:assemblePlaystoreDebug :app:assembleFdroidDebug
       - name: Verify packaged native libraries and create checksums
         run: |
@@ -90,10 +103,48 @@ jobs:
             V2rayNG/app/build/outputs/apk/**/debug/*.apk
             SHA256SUMS.txt
           retention-days: 14
+      - name: Upload ARM64 phone APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: FutureFast-0.1.0-arm64
+          if-no-files-found: error
+          path: V2rayNG/app/build/outputs/apk/playstore/debug/*arm64-v8a*.apk
+          retention-days: 14
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: FutureFast-test-reports
           path: V2rayNG/app/build/reports/tests
+          if-no-files-found: ignore
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Launch smoke test on Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install V2rayNG/app/build/outputs/apk/playstore/debug/*x86_64*.apk
+            adb shell pm grant tech.future.fast android.permission.POST_NOTIFICATIONS
+            adb logcat -c
+            adb shell am start -W -n tech.future.fast/com.v2ray.ang.ui.main.MainActivity
+            sleep 8
+            adb shell pidof tech.future.fast
+            mkdir -p smoke
+            adb shell screencap -p /sdcard/future-fast-home.png
+            adb pull /sdcard/future-fast-home.png smoke/
+            adb logcat -b crash -d > smoke/crash.log
+            test ! -s smoke/crash.log || ! grep -q 'FATAL EXCEPTION' smoke/crash.log
+      - name: Upload emulator smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: FutureFast-emulator-smoke
+          path: smoke/
           if-no-files-found: ignore
