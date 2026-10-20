@@ -234,6 +234,9 @@ object CoreConfigManager {
         }
 
         applyObservability(v2rayConfig, balancerStrategies)
+        FutureFastRouting.apply(v2rayConfig,
+            MmkvManager.decodeSettingsString(AppConfig.PREF_DELAY_TEST_URL) ?: AppConfig.DELAY_TEST_URL,
+            policyGroupBalancerTags[AppConfig.TAG_PROXY])
         applySpeedDisabled(v2rayConfig)
         resolveOutboundDomainsToHosts(v2rayConfig)
 
@@ -1241,7 +1244,7 @@ object CoreConfigManager {
             && v2rayConfig.outbounds.none { it.tag == outboundTag }
         ) {
             LogUtil.w(AppConfig.TAG, "Outbound tag '$outboundTag' not found, falling back to '${AppConfig.TAG_PROXY}'")
-            rule.outboundTag = if (outboundTag.startsWith("future-fast-ai-")) AppConfig.TAG_BLOCKED else AppConfig.TAG_PROXY
+            rule.outboundTag = AppConfig.TAG_PROXY
         }
 
         v2rayConfig.routing.rules.add(rule)

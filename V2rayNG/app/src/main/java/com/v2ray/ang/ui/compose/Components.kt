@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import com.v2ray.ang.ui.main.glass
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -77,6 +79,7 @@ fun AppTopBar(
 ) {
     Column {
         TopAppBar(
+            modifier = Modifier.glass(LocalGlassBackdrop.current, RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
             title = {
                 if (isSearchActive) {
                     SearchInputField(
@@ -102,7 +105,7 @@ fun AppTopBar(
             },
             actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = Color.Transparent,
                 titleContentColor = MaterialTheme.colorScheme.onSurface,
                 navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                 actionIconContentColor = MaterialTheme.colorScheme.onSurface
@@ -286,7 +289,8 @@ fun ReorderableListItem(
 ) {
     val elevation by reorderableElevation(isDragging)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).glass(LocalGlassBackdrop.current),
+        color = Color.Transparent,
         shadowElevation = elevation
     ) {
         Row(
@@ -308,8 +312,9 @@ fun ReorderableGridItem(
     val elevation by reorderableElevation(isDragging)
     Surface(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth().padding(4.dp).glass(LocalGlassBackdrop.current)
             .then(with(scope) { reorderableDragHandle() }),
+        color = Color.Transparent,
         shadowElevation = elevation
     ) {
         content()

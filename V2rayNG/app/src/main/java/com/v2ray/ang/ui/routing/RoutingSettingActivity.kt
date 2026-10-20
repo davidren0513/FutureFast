@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.routing
 
+import com.v2ray.ang.ui.compose.GlassDropdownMenu
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
@@ -18,12 +19,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import com.v2ray.ang.ui.compose.GlassSwitch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -235,7 +235,7 @@ fun RoutingSettingScreen(
                                 contentDescription = stringResource(R.string.acc_more)
                             )
                         }
-                        DropdownMenu(
+                        GlassDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                             containerColor = MaterialTheme.colorScheme.surface
@@ -381,8 +381,9 @@ private fun RoutingRulesetItem(
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Switch(
-                checked = ruleset.enabled ?: false,
+            GlassSwitch(
+                checked = ruleset.enabled,
+                label = ruleset.remarks,
                 onCheckedChange = onEnabledChange,
                 modifier = Modifier.scale(0.7f),
                 colors = SwitchDefaults.colors(

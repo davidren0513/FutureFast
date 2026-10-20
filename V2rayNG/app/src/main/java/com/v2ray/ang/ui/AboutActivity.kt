@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.v2ray.ang.ui.compose.GlassAlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -87,9 +87,9 @@ fun AboutScreen(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             Text(stringResource(R.string.ff_disclaimer), style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
-            Text(stringResource(R.string.ff_independent), style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             Text(stringResource(R.string.ff_upstream), style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            Text(stringResource(R.string.ff_thanks), style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             TextButton(onClick = { Utils.openUri(context, "https://github.com/2dust/v2rayNG") },
                 modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -111,16 +111,6 @@ fun AboutScreen(
                 onClick = onTranslatorsClick
             )
             SettingsMenuItem(
-                icon = painterResource(R.drawable.ic_feedback_24dp),
-                title = stringResource(R.string.title_pref_feedback),
-                onClick = { Utils.openUri(context, AppConfig.APP_ISSUES_URL) }
-            )
-            SettingsMenuItem(
-                icon = painterResource(R.drawable.ic_telegram_24dp),
-                title = stringResource(R.string.title_tg_channel),
-                onClick = { Utils.openUri(context, AppConfig.TG_CHANNEL_URL) }
-            )
-            SettingsMenuItem(
                 icon = painterResource(R.drawable.ic_privacy_24dp),
                 title = stringResource(R.string.title_privacy_policy),
                 onClick = { Utils.openUri(context, AppConfig.APP_PRIVACY_POLICY) }
@@ -134,7 +124,7 @@ fun AboutScreen(
     }
 
     if (showOssDialog) {
-        AlertDialog(
+        GlassAlertDialog(
             onDismissRequest = { showOssDialog = false },
             title = { Text(stringResource(R.string.title_oss_license)) },
             text = {

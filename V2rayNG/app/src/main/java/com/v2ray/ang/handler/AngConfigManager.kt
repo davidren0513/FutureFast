@@ -181,6 +181,14 @@ object AngConfigManager {
      */
     fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
         return try {
+            // A single subscription pasted into an existing group keeps that group's identity.
+            val subscriptionUrl = server?.trim()?.takeIf(Utils::isValidSubUrl)
+                ?: Utils.decode(server).trim().takeIf(Utils::isValidSubUrl)
+            val target = existingSubscriptionImport(subscriptionUrl, subid, MmkvManager.decodeSubscription(subid))
+            if (target != null) {
+                val result = updateConfigViaSub(target, append = append)
+                return result.configCount to 0
+            }
             var count = parseBatchConfig(Utils.decode(server), subid, append)
             if (count <= 0) {
                 count = parseBatchConfig(server, subid, append)
@@ -202,6 +210,12 @@ object AngConfigManager {
             LogUtil.e(AppConfig.TAG, "Failed to store imported profiles", e)
             0 to 0
         }
+    }
+
+    /** Plan an import without mutating metadata until a validated response has been stored. */
+    internal fun existingSubscriptionImport(url: String?, groupId: String, existing: SubscriptionItem?): SubscriptionCache? {
+        if (url.isNullOrBlank() || groupId.isBlank() || existing == null) return null
+        return SubscriptionCache(groupId, existing.copy(url = url, enabled = true))
     }
 
     /**
@@ -458,7 +472,7 @@ object AngConfigManager {
      * @param it The subscription item.
      * @return Subscription update result.
      */
-    fun updateConfigViaSub(it: SubscriptionCache): SubscriptionUpdateResult {
+    fun updateConfigViaSub(it: SubscriptionCache, append: Boolean = false): SubscriptionUpdateResult {
         try {
             // Check if disabled
             if (!it.subscription.enabled) {
@@ -527,7 +541,7 @@ object AngConfigManager {
                 LogUtil.w(AppConfig.TAG, "Unsupported subscription response id=${it.guid}")
                 return SubscriptionUpdateResult(failureCount = 1)
             }
-            val count = parseConfigViaSub(configText, it.guid, false)
+            val count = parseConfigViaSub(configText, it.guid, append)
             if (count > 0) {
                 it.subscription.lastUpdated = System.currentTimeMillis()
                 MmkvManager.encodeSubscription(it.guid, it.subscription)

@@ -1,5 +1,11 @@
 package com.v2ray.ang.ui.compose
 
+import com.v2ray.ang.ui.main.glass
+import androidx.compose.material3.ripple
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,8 +87,11 @@ private fun SettingsItemRow(
     enabled: Boolean,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    toggleState: Boolean? = null,
+    interactionSource: MutableInteractionSource? = null,
     trailing: @Composable (() -> Unit)? = null
 ) {
+    val interaction = interactionSource ?: remember { MutableInteractionSource() }
     val titleColor = if (enabled) MaterialTheme.colorScheme.onSurface
     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     val descriptionColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
@@ -91,7 +100,11 @@ private fun SettingsItemRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .glass(LocalGlassBackdrop.current)
+            .then(if (toggleState != null && onClick != null) Modifier.toggleable(toggleState, interaction, indication = ripple(bounded = true), enabled = enabled, role = Role.Switch) { onClick() }
+                else if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier)
+            .semantics(mergeDescendants = true) {}
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -243,6 +256,7 @@ fun SettingsSwitchItem(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    val interaction = remember { MutableInteractionSource() }
     SettingsItemRow(
         icon = icon,
         title = title,
@@ -252,11 +266,14 @@ fun SettingsSwitchItem(
             { onCheckedChange(!checked) }
         } else null,
         modifier = modifier,
+        toggleState = checked,
+        interactionSource = interaction,
         trailing = {
-            Switch(
+            GlassSwitch(
                 checked = checked,
-                onCheckedChange = if (enabled) onCheckedChange else null,
-                modifier = Modifier.scale(0.8f),
+                onCheckedChange = null,
+                interactionSource = interaction,
+                modifier = Modifier,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onSecondary,
                     checkedTrackColor = MaterialTheme.colorScheme.secondary

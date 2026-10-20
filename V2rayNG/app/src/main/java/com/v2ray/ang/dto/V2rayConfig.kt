@@ -73,6 +73,7 @@ data class V2rayConfig(
         var targetStrategy: String? = null
     ) {
         data class OutSettingsBean(
+            var inboundTag: String? = null,
             /*Common */
             var address: Any? = null,
             var port: Int? = null,

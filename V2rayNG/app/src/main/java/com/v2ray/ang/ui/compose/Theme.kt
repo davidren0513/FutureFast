@@ -10,6 +10,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.v2ray.ang.ui.main.FutureFastBackdrop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -159,6 +162,8 @@ fun resolveDarkTheme(): Boolean {
     }
 }
 
+val LocalGlassBackdrop = compositionLocalOf<Backdrop> { error("Glass backdrop must be provided by AppTheme") }
+
 val LocalDarkTheme = compositionLocalOf { false }
 
 @Composable
@@ -176,6 +181,18 @@ fun AppTheme(
         darkTheme -> DarkColor
         else -> LightColor
     }
+    val glassColors = colorScheme.copy(
+        primary = if (dynamicColor) colorScheme.primary else Color(0xFF287BFA),
+        secondary = if (dynamicColor) colorScheme.primary else Color(0xFF287BFA),
+        background = Color.Transparent,
+        surface = colorScheme.surface.copy(alpha = 0.24f),
+        surfaceContainerLowest = colorScheme.surfaceContainerLowest.copy(alpha = 0.14f),
+        surfaceContainerLow = colorScheme.surfaceContainerLow.copy(alpha = 0.22f),
+        surfaceContainer = colorScheme.surfaceContainer.copy(alpha = 0.26f),
+        surfaceContainerHigh = colorScheme.surfaceContainerHigh.copy(alpha = 0.32f),
+        surfaceContainerHighest = colorScheme.surfaceContainerHighest.copy(alpha = 0.38f),
+    )
+    val backdrop = rememberLayerBackdrop()
     val snackbarController = rememberAppSnackbarController()
 
     val view = LocalView.current
@@ -192,12 +209,14 @@ fun AppTheme(
 
     CompositionLocalProvider(
         LocalDarkTheme provides darkTheme,
+        LocalGlassBackdrop provides backdrop,
         LocalAppSnackbar provides snackbarController
     ) {
         MaterialTheme(
-            colorScheme = colorScheme
+            colorScheme = glassColors
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
+                FutureFastBackdrop(backdrop, darkTheme)
                 AppSnackbarBridge(controller = snackbarController)
                 content()
                 AppSnackbarHost(hostState = snackbarController.hostState)

@@ -49,4 +49,38 @@ class FutureFastPolicyTest {
         assertFalse(FutureFastPolicy.unsupportedSubscription("vless://example"))
         assertFalse(FutureFastPolicy.unsupportedSubscription("dmxlc3M6Ly9leGFtcGxl"))
     }
+    @Test
+    fun `AI assignments stay independent of the default node and each other`() {
+        val chatgpt = FutureFastNodeReference("us", "subscription", "US")
+        val claude = FutureFastNodeReference("jp", "subscription", "JP")
+        val gemini = FutureFastNodeReference("sg", "subscription", "SG")
+        val saved = FutureFastPreferences(aiEnabled = true, aiNodes = mapOf(
+            FutureFastAiService.CHATGPT.name to chatgpt,
+            FutureFastAiService.CLAUDE.name to claude,
+            FutureFastAiService.GEMINI.name to gemini,
+        ))
+        val restored = com.google.gson.Gson().fromJson(
+            com.google.gson.Gson().toJson(saved), FutureFastPreferences::class.java)
+        assertEquals(saved, restored)
+        val nodes = listOf(gemini, claude, chatgpt)
+        assertEquals(listOf("us", "jp", "sg"), FutureFastAiService.entries.map {
+            FutureFastPolicy.resolveNode(restored.aiNodes.getValue(it.name), nodes)
+        })
+        // A missing reference stays unresolved; runtime routing decides the default fallback without changing saved assignments.
+        assertNull(FutureFastPolicy.resolveNode(chatgpt, listOf(claude, gemini)))
+        assertEquals("jp", FutureFastPolicy.resolveNode(claude, listOf(claude, gemini)))
+        val followDefault = restored.copy(aiNodes = restored.aiNodes - FutureFastAiService.GEMINI.name)
+        assertFalse(followDefault.aiNodes.containsKey(FutureFastAiService.GEMINI.name))
+        assertEquals(chatgpt, followDefault.aiNodes[FutureFastAiService.CHATGPT.name])
+        assertEquals(claude, followDefault.aiNodes[FutureFastAiService.CLAUDE.name])
+    }
+
+    @Test
+    fun `AI outbound tags are unique and cover web API and studio endpoints`() {
+        assertEquals(3, FutureFastAiService.entries.map { it.tag }.toSet().size)
+        assertTrue(FutureFastAiService.CHATGPT.domains.containsAll(listOf("chatgpt.com", "openai.com")))
+        assertTrue(FutureFastAiService.CLAUDE.domains.containsAll(listOf("claude.ai", "anthropic.com")))
+        assertTrue(FutureFastAiService.GEMINI.domains.containsAll(listOf(
+            "gemini.google.com", "generativelanguage.googleapis.com", "aistudio.google.com")))
+    }
 }

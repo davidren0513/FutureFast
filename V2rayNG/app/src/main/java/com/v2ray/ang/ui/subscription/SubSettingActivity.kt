@@ -15,12 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.AlertDialog
+import com.v2ray.ang.ui.compose.GlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import com.v2ray.ang.ui.compose.GlassSwitch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -224,14 +224,15 @@ fun SubSettingScreen(
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Switch(
+                                GlassSwitch(
                                     checked = subCache.subscription.enabled,
+                                    label = subCache.subscription.remarks,
                                     onCheckedChange = { checked ->
                                         val updated = subCache.subscription.copy()
                                         updated.enabled = checked
                                         viewModel.update(subCache.guid, updated)
                                     },
-                                    modifier = Modifier.scale(0.7f),
+                                    modifier = Modifier,
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = MaterialTheme.colorScheme.onSecondary,
                                         checkedTrackColor = MaterialTheme.colorScheme.secondary
@@ -289,7 +290,7 @@ fun SubSettingScreen(
         var autoRemoveInvalidAfterTest by rememberMmkvBool(AppConfig.PREF_AUTO_REMOVE_INVALID_AFTER_TEST, false)
         var autoSortAfterTest by rememberMmkvBool(AppConfig.PREF_AUTO_SORT_AFTER_TEST, false)
 
-        AlertDialog(
+        GlassAlertDialog(
             onDismissRequest = { showUpdateDialog = false },
             text = {
                 Column {

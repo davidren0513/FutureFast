@@ -60,6 +60,9 @@ def tap_label(label):
             return
     raise AssertionError("Missing clickable label: " + label)
 
+# Match the CI emulator settings for stable accessibility snapshots.
+for setting in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
+    adb("shell", "settings", "put", "global", setting, "0")
 adb("shell", "svc", "power", "stayon", "true")
 adb("shell", "input", "keyevent", "224")
 adb("shell", "wm", "dismiss-keyguard")
@@ -68,6 +71,10 @@ adb("shell", "am", "force-stop", "tech.future.fast")
 adb("shell", "am", "start", "-W", "-n", "tech.future.fast/com.v2ray.ang.ui.main.MainActivity")
 time.sleep(8)
 capture("future-fast-home")
+tap_label("节点")
+capture("future-fast-nodes")
+adb("shell", "input", "keyevent", "4")
+time.sleep(1)
 tap_label("自动管理")
 capture("future-fast-automation")
 adb("shell", "input", "keyevent", "4")

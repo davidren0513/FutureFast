@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.apppicker
 
+import com.v2ray.ang.ui.compose.GlassDropdownMenu
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -162,7 +162,7 @@ fun AppPickerScreen(
                                 contentDescription = null
                             )
                         }
-                        DropdownMenu(
+                        GlassDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                             containerColor = MaterialTheme.colorScheme.surface

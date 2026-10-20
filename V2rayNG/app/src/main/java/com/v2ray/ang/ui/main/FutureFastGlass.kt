@@ -18,6 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
@@ -38,18 +40,16 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.v2ray.ang.ui.compose.LocalDarkTheme
+import com.v2ray.ang.ui.main.liquid.LiquidButton
 
 /** Decorative geometry lives in the sampled backdrop so the lens refracts actual content. */
 @Composable
 internal fun FutureFastBackdrop(backdrop: LayerBackdrop, dark: Boolean) {
-    val motion = rememberInfiniteTransition(label = "glass-light")
-    val phase by motion.animateFloat(0f, 1f,
-        infiniteRepeatable(tween(18000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "glass-light-position")
+    // Sample a static backdrop; animate the interactive lenses without continuous full-screen redraws.
     Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         val w = size.width
         val h = size.height
-        val drift = (phase - 0.5f) * w * 0.09f
+        val drift = 0f
         val base = if (dark) listOf(Color(0xFF081325), Color(0xFF192743), Color(0xFF10293B))
             else listOf(Color(0xFFF6FBFF), Color(0xFFE7F3FF), Color(0xFFF3F0FF), Color(0xFFDCF7FC))
         drawRect(Brush.linearGradient(base, end = Offset(w, h)))
@@ -58,8 +58,8 @@ internal fun FutureFastBackdrop(backdrop: LayerBackdrop, dark: Boolean) {
                 Offset(w * x + drift, h * y), w * radius),
                 w * radius, Offset(w * x + drift, h * y))
         }
-        glow(Color(0xFF80DFFF).copy(alpha = if (dark) 0.19f else 0.45f), 0.02f, 0.43f, 0.9f)
-        glow(Color(0xFFB1A4F8).copy(alpha = if (dark) 0.24f else 0.34f), 0.98f, 0.21f, 0.8f)
+        glow(Color(0xFF40DDBE).copy(alpha = if (dark) 0.25f else 0.65f), 0.02f, 0.43f, 0.9f)
+        glow(Color(0xFF4B83F8).copy(alpha = if (dark) 0.30f else 0.48f), 0.98f, 0.21f, 0.8f)
         glow(Color(0xFF82E7F1).copy(alpha = if (dark) 0.16f else 0.36f), 0.8f, 0.76f, 0.68f)
         glow(Color(0xFFB9A2F7).copy(alpha = if (dark) 0.16f else 0.32f), 0.16f, 0.95f, 0.75f)
 
@@ -80,8 +80,8 @@ internal fun FutureFastBackdrop(backdrop: LayerBackdrop, dark: Boolean) {
         }
         listOf(right, left, bottom).forEachIndexed { index, path ->
             drawPath(path, Brush.linearGradient(listOf(
-                Color.White.copy(alpha = if (dark) 0.06f else 0.54f),
-                Color(0xFF82DFFC).copy(alpha = if (dark) 0.10f else 0.20f),
+                Color.White.copy(alpha = if (dark) 0.06f else 0.20f),
+                Color(0xFF20CDB6).copy(alpha = if (dark) 0.20f else 0.38f),
                 Color(0xFFC2B1F8).copy(alpha = if (dark) 0.16f else 0.28f),
                 Color.White.copy(alpha = if (dark) 0.04f else 0.48f)),
                 start = Offset(w * 0.1f, h * index * 0.2f), end = Offset(w, h)))
@@ -101,84 +101,71 @@ internal fun Modifier.glass(backdrop: Backdrop, shape: Shape = RoundedCornerShap
     val rim = Brush.linearGradient(listOf(Color.White.copy(alpha = if (dark) 0.5f else 0.95f),
         Color.White.copy(alpha = 0.10f), Color(0xFFBEECFF).copy(alpha = 0.5f),
         Color.White.copy(alpha = if (dark) 0.4f else 0.95f)))
+    val base = this.shadow(if (prominent) 18.dp else 8.dp, shape, clip = false,
+        ambientColor = Color(0xFF496DA9).copy(alpha = 0.2f), spotColor = Color(0xFF32669B).copy(alpha = 0.22f))
     val material = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        drawBackdrop(backdrop = backdrop, shape = { shape },
+        base.drawBackdrop(backdrop = backdrop, shape = { shape },
             effects = {
                 vibrancy()
-                blur((if (prominent) 2f else 3f).dp.toPx())
+                blur((if (prominent) 2f else 6f).dp.toPx())
                 lens((if (prominent) 28f else 16f).dp.toPx(),
                     (if (prominent) 58f else 30f).dp.toPx(),
                     depthEffect = true, chromaticAberration = prominent)
             },
             highlight = { Highlight(width = if (prominent) 1.7.dp else 1.2.dp, blurRadius = 0.8.dp) },
-            innerShadow = { InnerShadow(radius = if (prominent) 14.dp else 8.dp,
+            innerShadow = { InnerShadow(radius = if (prominent) 18.dp else 10.dp,
                 offset = DpOffset(0.dp, 3.dp),
-                color = Color(0xFF6685BD).copy(alpha = if (dark) 0.28f else 0.13f)) },
+                color = Color(0xFF6685BD).copy(alpha = if (dark) 0.32f else 0.22f)) },
             onDrawSurface = {
-                drawRect(Brush.linearGradient(listOf(surface.copy(alpha = if (dark) 0.18f else 0.36f),
-                    surface.copy(alpha = 0.04f), surface.copy(alpha = if (dark) 0.12f else 0.23f))))
+                drawRect(Brush.linearGradient(listOf(surface.copy(alpha = if (dark) 0.20f else 0.28f),
+                    surface.copy(alpha = 0.04f), surface.copy(alpha = if (dark) 0.08f else 0.06f))))
             })
-    } else background(Brush.linearGradient(listOf(surface.copy(alpha = 0.60f),
+    } else base.background(Brush.linearGradient(listOf(surface.copy(alpha = 0.60f),
         surface.copy(alpha = 0.20f), surface.copy(alpha = 0.45f))), shape)
-    return material.clip(shape).border(if (prominent) 1.4.dp else 1.dp, rim, shape)
+    return material.clip(shape).border(if (prominent) 1.4.dp else 0.8.dp, rim, shape)
 }
 
 @Composable
-internal fun GlassPowerButton(backdrop: Backdrop, label: String, running: Boolean,
+internal fun GlassPowerButton(backdrop: Backdrop, label: String,
     enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.965f else 1f,
-        spring(dampingRatio = 0.6f, stiffness = 450f), label = "power-press")
     val dark = LocalDarkTheme.current
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        val diameter = minOf(maxWidth * 0.79f, 280.dp)
-        Box(Modifier.size(diameter).graphicsLayer { scaleX = scale; scaleY = scale }
-            .glass(backdrop, CircleShape, prominent = true)
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled,
-                role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) {}, contentAlignment = Alignment.Center) {
-            Canvas(Modifier.fillMaxSize()) {
-                val r = size.minDimension / 2f
-                val rim = Brush.sweepGradient(listOf(Color(0xFF929FFA), Color.White,
-                    Color(0xFF87DFF7), Color.White, Color(0xFFE9CBFC), Color(0xFF929FFA)))
-                drawCircle(rim, r - 2.dp.toPx(), style = Stroke(1.2.dp.toPx()))
-                drawCircle(Color.White.copy(alpha = if (dark) 0.35f else 0.85f),
-                    r - 7.dp.toPx(), style = Stroke(1.dp.toPx()))
-                drawCircle(Brush.radialGradient(listOf(Color.Transparent, Color.Transparent,
-                    Color(0xFF7EA7EC).copy(alpha = 0.12f), Color.White.copy(alpha = 0.48f)),
-                    radius = r), r - 4.dp.toPx())
-                val inset = 11.dp.toPx()
-                drawArc(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.05f),
-                    Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.05f))),
-                    191f, 104f, false, Offset(inset, inset),
-                    Size(size.width - 2 * inset, size.height - 2 * inset),
-                    style = Stroke(4.dp.toPx(), cap = StrokeCap.Round))
-                drawArc(Color.White.copy(alpha = 0.8f), 18f, 74f, false,
-                    Offset(inset, inset), Size(size.width - 2 * inset, size.height - 2 * inset),
-                    style = Stroke(2.3.dp.toPx(), cap = StrokeCap.Round))
-                rotate(-28f, Offset(r * 0.55f, r * 0.32f)) {
-                    drawOval(Color.White.copy(alpha = 0.83f), Offset(r * 0.30f, r * 0.27f),
-                        Size(r * 0.50f, r * 0.09f))
-                }
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Canvas(Modifier.size(82.dp)) {
-                    val color = if (running) listOf(Color(0xFF47DCC6), Color(0xFF008D85))
-                        else listOf(Color(0xFF43C9FF), Color(0xFF1259FF))
-                    val brush = Brush.verticalGradient(color)
-                    val stroke = size.width * 0.125f
+        val diameter = minOf(maxWidth * 0.72f, maxHeight, 236.dp).coerceAtLeast(72.dp)
+        val content: @Composable RowScope.() -> Unit = {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Canvas(Modifier.size(minOf(diameter * 0.31f, 72.dp))) {
+                    val brush = Brush.verticalGradient(listOf(Color(0xFF36B8FF), Color(0xFF006BFF)))
+                    val stroke = size.width * 0.10f
                     drawArc(brush, -49f, 278f, false,
-                        Offset(stroke, stroke * 1.4f),
-                        Size(size.width - 2 * stroke, size.height - 2.4f * stroke),
+                        Offset(stroke, stroke * 1.4f), Size(size.width - 2 * stroke, size.height - 2.4f * stroke),
                         style = Stroke(stroke, cap = StrokeCap.Round))
                     drawLine(brush, Offset(size.width / 2f, stroke * 0.42f),
                         Offset(size.width / 2f, size.height * 0.43f), stroke, StrokeCap.Round)
                 }
-                Text(label, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
-                    color = if (dark) Color(0xFFD6E9FF) else Color(0xFF082A96))
+                Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                    color = if (dark) Color(0xFFE7F2FF) else Color(0xFF12458B))
             }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            LiquidButton(onClick = onClick, backdrop = backdrop, enabled = enabled,
+                modifier = Modifier.size(diameter).shadow(24.dp, CircleShape, clip = false,
+                    ambientColor = Color(0xFF669EBD).copy(alpha = 0.3f), spotColor = Color(0xFF527AA9).copy(alpha = 0.3f))
+                    .drawWithContent {
+                        drawContent()
+                        drawCircle(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.9f), Color.White.copy(alpha = 0.05f), Color(0xFFB4E8FF), Color.White.copy(alpha = 0.8f))),
+                            radius = size.minDimension / 2f - 2.dp.toPx(), style = Stroke(1.5.dp.toPx()))
+                        drawArc(Color.White.copy(alpha = 0.65f), 196f, 78f, false,
+                            Offset(8.dp.toPx(), 8.dp.toPx()), Size(size.width - 16.dp.toPx(), size.height - 16.dp.toPx()),
+                            style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round))
+                        drawOval(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.7f), Color.White.copy(alpha = 0.08f))),
+                            Offset(size.width * 0.17f, size.height * 0.12f), Size(size.width * 0.23f, size.height * 0.055f))
+                    }.semantics(mergeDescendants = true) {},
+                surfaceColor = Color.White.copy(alpha = if (dark) 0.04f else 0.06f), content = content)
+        } else {
+            Row(Modifier.size(diameter).glass(backdrop, CircleShape)
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics(mergeDescendants = true) {},
+                verticalAlignment = Alignment.CenterVertically, content = content)
         }
     }
 }

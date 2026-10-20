@@ -20,8 +20,7 @@ import java.net.URLDecoder
 
 class UrlSchemeActivity : BaseComponentActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onUserTermsAccepted() {
         try {
             intent.apply {
                 if (action == Intent.ACTION_SEND) {

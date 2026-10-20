@@ -18,13 +18,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 data class FutureFastUiState(
@@ -54,26 +50,29 @@ sealed interface FutureFastAction {
 
 /** Settings and background-maintenance state; connection operations remain MainAction operations. */
 class FutureFastViewModel(application: Application) : AndroidViewModel(application) {
-    private val settingsMutex = Mutex()
+    private val settings = FutureFastSettingsState()
     private val _error = MutableStateFlow<Int?>(null)
     val error = _error.asStateFlow()
     private val _intervalInput = MutableStateFlow(FutureFastIntervalInput())
     val intervalInput = _intervalInput.asStateFlow()
-    val state = flow {
-        while (true) {
-            try {
-                emit(withContext(Dispatchers.IO) { loadState() })
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                LogUtil.e(AppConfig.TAG, "Future Fast: load settings failed", error)
-                _error.value = R.string.ff_error
-            }
-            delay(2000)
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FutureFastUiState())
+    val state = settings.state
 
     init {
+        viewModelScope.launch {
+            settings.observed.collectLatest { active ->
+                if (active) while (true) {
+                    try {
+                        settings.transaction(change = { withContext(Dispatchers.IO) { loadState() } })
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        LogUtil.e(AppConfig.TAG, "Future Fast: load settings failed", error)
+                        _error.value = R.string.ff_error
+                    }
+                    delay(2000)
+                }
+            }
+        }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 FutureFastOptimizer.schedule(application)
@@ -125,56 +124,68 @@ class FutureFastViewModel(application: Application) : AndroidViewModel(applicati
             _error.value = null
             return
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            settingsMutex.withLock {
-                try {
-                    when (action) {
-                        is FutureFastAction.IntervalInput -> Unit
-                        is FutureFastAction.AutoSelect -> {
-                            MmkvManager.updateFutureFastPreferences { it.copy(autoSelect = action.enabled) }
-                            FutureFastOptimizer.schedule(getApplication())
-                        }
-                        is FutureFastAction.TestInterval -> {
-                            require(action.minutes in 15..10080)
-                            MmkvManager.updateFutureFastPreferences { it.copy(testIntervalMinutes = action.minutes) }
-                            FutureFastOptimizer.schedule(getApplication())
-                        }
-                        is FutureFastAction.AiEnabled -> MmkvManager.updateFutureFastPreferences { it.copy(aiEnabled = action.enabled) }
-                        is FutureFastAction.AiNode -> {
-                            val node = action.guid?.let { guid -> SettingsManager.futureFastNodes().firstOrNull { it.guid == guid }
-                                ?: error("Selected AI node no longer exists") }
-                            MmkvManager.updateFutureFastPreferences {
-                                val nodes = it.aiNodes.toMutableMap()
-                                if (node == null) nodes.remove(action.service.name) else nodes[action.service.name] = node
-                                it.copy(aiNodes = nodes)
+        // Acquire the settings transaction in event order on Main; disk work stays on IO.
+        viewModelScope.launch {
+            try {
+                settings.transaction(change = {
+                    withContext(Dispatchers.IO) {
+                        when (action) {
+                            is FutureFastAction.IntervalInput -> Unit
+                            is FutureFastAction.AutoSelect -> {
+                                MmkvManager.updateFutureFastPreferences { it.copy(autoSelect = action.enabled) }
                             }
-                        }
-                        is FutureFastAction.SubscriptionSchedule -> {
-                            require(action.minutes in 15..10080)
-                            val subscriptions = MmkvManager.decodeSubscriptions().filter { it.subscription.url.isNotBlank() }
-                            val originals = subscriptions.associate { it.guid to it.subscription.copy() }
-                            try {
-                                subscriptions.forEach { sub ->
-                                    sub.subscription.autoUpdate = action.enabled
-                                    sub.subscription.updateInterval = action.minutes
-                                    MmkvManager.encodeSubscription(sub.guid, sub.subscription)
-                                    check(MmkvManager.decodeSubscription(sub.guid) == sub.subscription)
+                            is FutureFastAction.TestInterval -> {
+                                require(action.minutes in 15..10080)
+                                MmkvManager.updateFutureFastPreferences { it.copy(testIntervalMinutes = action.minutes) }
+                            }
+                            is FutureFastAction.AiEnabled -> MmkvManager.updateFutureFastPreferences { it.copy(aiEnabled = action.enabled) }
+                            is FutureFastAction.AiNode -> {
+                                val node = action.guid?.let { guid -> SettingsManager.futureFastNodes().firstOrNull { it.guid == guid }
+                                    ?: error("Selected AI node no longer exists") }
+                                MmkvManager.updateFutureFastPreferences {
+                                    val nodes = it.aiNodes.toMutableMap()
+                                    if (node == null) nodes.remove(action.service.name) else nodes[action.service.name] = node
+                                    it.copy(aiNodes = nodes)
                                 }
-                            } catch (error: Exception) {
-                                originals.forEach { (id, item) -> MmkvManager.encodeSubscription(id, item) }
-                                throw error
                             }
-                            subscriptions.forEach { SubscriptionUpdater.syncOne(getApplication(), it.guid) }
+                            is FutureFastAction.SubscriptionSchedule -> {
+                                require(action.minutes in 15..10080)
+                                val subscriptions = MmkvManager.decodeSubscriptions().filter { it.subscription.url.isNotBlank() }
+                                val originals = subscriptions.associate { it.guid to it.subscription.copy() }
+                                try {
+                                    subscriptions.forEach { sub ->
+                                        sub.subscription.autoUpdate = action.enabled
+                                        sub.subscription.updateInterval = action.minutes
+                                        MmkvManager.encodeSubscription(sub.guid, sub.subscription)
+                                        check(MmkvManager.decodeSubscription(sub.guid) == sub.subscription)
+                                    }
+                                } catch (error: Exception) {
+                                    originals.forEach { (id, item) -> MmkvManager.encodeSubscription(id, item) }
+                                    throw error
+                                }
+                            }
+                            FutureFastAction.TestNow -> FutureFastOptimizer.runNow(getApplication())
+                            FutureFastAction.DismissError -> Unit
                         }
-                        FutureFastAction.TestNow -> FutureFastOptimizer.runNow(getApplication())
-                        FutureFastAction.DismissError -> Unit
+                        loadState()
                     }
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    LogUtil.e(AppConfig.TAG, "Future Fast: settings operation failed", error)
-                    _error.value = R.string.ff_error
-                }
+                }, afterPublish = {
+                    withContext(Dispatchers.IO) {
+                        when (action) {
+                            is FutureFastAction.AutoSelect, is FutureFastAction.TestInterval ->
+                                FutureFastOptimizer.schedule(getApplication())
+                            is FutureFastAction.SubscriptionSchedule ->
+                                MmkvManager.decodeSubscriptions().filter { it.subscription.url.isNotBlank() }
+                                    .forEach { SubscriptionUpdater.syncOne(getApplication(), it.guid) }
+                            else -> Unit
+                        }
+                    }
+                })
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                LogUtil.e(AppConfig.TAG, "Future Fast: settings operation failed", error)
+                _error.value = R.string.ff_error
             }
         }
     }

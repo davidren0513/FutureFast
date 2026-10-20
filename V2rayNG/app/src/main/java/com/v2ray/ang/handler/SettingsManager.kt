@@ -58,7 +58,7 @@ object SettingsManager {
             com.v2ray.ang.dto.entities.RulesetItem(
                 id = service.tag,
                 domain = service.domains.map { "domain:$it" },
-                outboundTag = if (guid == null) AppConfig.TAG_BLOCKED else service.tag,
+                outboundTag = if (guid == null) AppConfig.TAG_PROXY else service.tag,
             )
         }
 

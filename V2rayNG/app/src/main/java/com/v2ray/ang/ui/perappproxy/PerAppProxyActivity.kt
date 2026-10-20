@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.perappproxy
 
+import com.v2ray.ang.ui.compose.GlassDropdownMenu
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.annotation.StringRes
@@ -16,13 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.v2ray.ang.ui.compose.GlassSwitch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -169,7 +169,7 @@ fun PerAppProxyScreen(
                                 contentDescription = stringResource(R.string.acc_more)
                             )
                         }
-                        DropdownMenu(
+                        GlassDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                             containerColor = MaterialTheme.colorScheme.surface
@@ -216,9 +216,10 @@ fun PerAppProxyScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Switch(
+                        GlassSwitch(
                             checked = perAppProxyEnabled,
-                            modifier = Modifier.scale(0.65f),
+                            label = stringResource(R.string.per_app_proxy_settings_enable),
+                            modifier = Modifier,
                             onCheckedChange = onPerAppProxyChanged,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onSecondary,
@@ -237,9 +238,10 @@ fun PerAppProxyScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Switch(
+                        GlassSwitch(
                             checked = bypassApps,
-                            modifier = Modifier.scale(0.65f),
+                            label = stringResource(R.string.switch_bypass_apps_mode),
+                            modifier = Modifier,
                             onCheckedChange = onBypassAppsChanged,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onSecondary,

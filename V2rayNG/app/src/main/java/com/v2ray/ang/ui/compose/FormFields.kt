@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.compose
 
+import com.v2ray.ang.ui.main.glass
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,6 +46,8 @@ fun FormTextField(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
+            .glass(LocalGlassBackdrop.current)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         OutlinedTextField(
             value = value,
@@ -101,6 +104,8 @@ fun FormDropdownField(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
+            .glass(LocalGlassBackdrop.current)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         OutlinedTextField(
             value = value,
@@ -135,9 +140,9 @@ fun FormDropdownField(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.verticalScrollbar(menuScrollState),
+            modifier = Modifier.glass(LocalGlassBackdrop.current).verticalScrollbar(menuScrollState),
             scrollState = menuScrollState,
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color.Transparent
         ) {
             options.forEach { option ->
                 DropdownMenuItem(

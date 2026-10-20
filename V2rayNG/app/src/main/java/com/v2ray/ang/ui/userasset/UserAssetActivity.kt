@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.userasset
 
+import com.v2ray.ang.ui.compose.GlassDropdownMenu
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -23,7 +24,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -280,7 +280,7 @@ internal fun UserAssetScreen(
                         IconButton(onClick = { showAddMenu = true }) {
                             Icon(painterResource(R.drawable.ic_add_24dp), contentDescription = stringResource(R.string.acc_add_asset))
                         }
-                        DropdownMenu(
+                        GlassDropdownMenu(
                             expanded = showAddMenu,
                             onDismissRequest = { showAddMenu = false },
                             containerColor = MaterialTheme.colorScheme.surface,
