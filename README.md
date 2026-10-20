@@ -11,7 +11,7 @@
 
 [![Android build](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml/badge.svg?branch=master)](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml)
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B-3DDC84)
-![Preview 0.1.0](https://img.shields.io/badge/Preview-0.1.0-2878FF)
+![Preview 0.1.1](https://img.shields.io/badge/Preview-0.1.1-2878FF)
 [![License GPL v3](https://img.shields.io/badge/License-GPLv3-blue)](LICENSE)
 
 </div>
@@ -19,26 +19,37 @@
 ## 实际界面
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="300" alt="FutureFast 0.1.0 实际连接首页：中央连接按钮、下次连接节点、自动管理及底部导航">
+  <img src="docs/screenshots/home.png" width="250" alt="FutureFast 0.1.1 实际连接首页">
+  <img src="docs/screenshots/automation.png" width="250" alt="FutureFast 0.1.1 实际自动管理页面">
+  <img src="docs/screenshots/ai.png" width="250" alt="FutureFast 0.1.1 实际 AI 分流页面">
 </p>
 
-<p align="center"><sub>0.1.0 预览版 · Android 35 模拟器实际截图 · 英文系统 · 尚未导入节点</sub></p>
+<details>
+<summary>查看深色首页</summary>
+<p align="center"><img src="docs/screenshots/home-dark.png" width="300" alt="FutureFast 0.1.1 实际深色首页"></p>
+</details>
+
+<p align="center"><sub>0.1.1 预览版 · Android 35 模拟器实际截图 · 简体中文 · 尚未导入节点</sub></p>
+
+0.1.1 按最初三张设计图重做了流动背景、玻璃圆形主按钮、彩色边缘高光、卡片图标和悬浮导航。Android 13 及以上使用实时背景采样、模糊与透镜折射；较旧系统保留渐变与高光降级效果。
 
 首页把连接操作放在中央：点击大按钮连接或断开，下方显示当前或下次使用的节点。节点管理和 AI 分流从底部进入，自动管理从首页卡片进入。
 
-截图来自[成功构建与启动检查](https://github.com/davidren0513/FutureFast/actions/runs/39394813378)，没有使用虚构节点或演示延迟。截图来源与环境见[截图说明](docs/screenshots/README.md)。
+截图来自[成功构建与启动检查](https://github.com/davidren0513/FutureFast/actions/runs/39401539475)，没有使用虚构节点或演示延迟。截图来源与环境见[截图说明](docs/screenshots/README.md)。
 
 ## 下载与安装
 
-当前提供 **FutureFast 0.1.0 预览版**，尚未发布正式稳定版。
+当前提供 **FutureFast 0.1.1 预览版**，尚未发布正式稳定版。
 
 | 下载入口 | 用途 |
 | --- | --- |
-| [ARM64 手机预览包](https://github.com/davidren0513/FutureFast/actions/runs/39394813378/artifacts/12251237917) | 大多数现代 Android 手机；ZIP 内包含 APK |
-| [最新构建列表](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml) | 选择成功的构建，在 Artifacts 中下载 `FutureFast-0.1.0-arm64` |
-| [完整构建与其他架构](https://github.com/davidren0513/FutureFast/actions/runs/39394813378) | `FutureFast-0.1.0-preview` 包含各架构 APK 和 SHA256SUMS |
+| [ARM64 手机预览包](https://github.com/davidren0513/FutureFast/actions/runs/39401539475/artifacts/12255236498) | 大多数现代 Android 手机；ZIP 内包含 APK |
+| [最新构建列表](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml) | 选择成功的构建，在 Artifacts 中下载 `FutureFast-0.1.1-arm64` |
+| [完整构建与其他架构](https://github.com/davidren0513/FutureFast/actions/runs/39401539475) | `FutureFast-0.1.1-preview` 包含各架构 APK 和 SHA256SUMS |
 
 GitHub Artifacts 下载需要登录 GitHub，当前保存 14 天。固定下载链接过期后，请从最新成功构建获取。
+
+**旧预览版升级提示：** 早期构建的测试签名没有成功缓存，不能保证不同构建可以覆盖安装。如果系统提示签名冲突，请先在旧应用导出并妥善保存配置，确认可恢复后再卸载旧版、安装新版并导入；不要直接卸载唯一保存配置的旧应用。正式发布签名仍待配置。
 
 1. 下载并解压 ZIP，在 Android 手机上安装适合设备架构的 APK。
 2. 打开 Future Fast，粘贴你自己的订阅地址，或扫描节点二维码。
@@ -49,7 +60,7 @@ GitHub Artifacts 下载需要登录 GitHub，当前保存 14 天。固定下载�
 
 ## 功能说明
 
-| 功能 | 0.1.0 预览版行为 |
+| 功能 | 0.1.1 预览版行为 |
 | --- | --- |
 | 液态玻璃首页 | 简化连接操作；Android 13 及以上使用模糊与折射，较旧系统使用半透明效果 |
 | 一键连接 / 断开 | 中央大按钮控制连接，下方显示节点 |
@@ -74,7 +85,7 @@ AI 分流按已配置的域名规则工作。指定节点丢失时，对匹配�
 
 ## 预览版状态
 
-[2026-10-20 构建](https://github.com/davidren0513/FutureFast/actions/runs/39394813378)已通过单元测试、Kotlin 编译、Play Store / F-Droid 两种变体打包、原生库打包检查，以及 Android 模拟器安装与启动检查。
+[2026-10-20 构建](https://github.com/davidren0513/FutureFast/actions/runs/39401539475)已通过单元测试、Kotlin 编译、Play Store / F-Droid 两种变体打包与 Lint、原生库打包检查，以及 Android 模拟器安装与启动检查。
 
 真实 JMS 订阅、AI 平台访问、后台长时间运行及完整 VPN / 仅代理 / root 场景仍需设备验证。当前液态玻璃改造集中在连接、自动管理和 AI 分流页面。详细测试命令、对应提交和 **Not run** 项目见[验证记录](docs/VALIDATION.md)。
 
