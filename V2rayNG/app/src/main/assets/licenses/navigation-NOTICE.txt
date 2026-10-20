@@ -1,0 +1,9 @@
+Future Fast navigation uses the Google Material Icons auto_awesome and dns glyphs.
+Source: https://github.com/google/material-design-icons
+License: Apache-2.0, reproduced in navigation-Apache-2.0.txt.
+Future Fast converted the original SVG paths to Android VectorDrawable XML.
+
+The navigation lens and deformation approach is based on Kyant0's LiquidBottomTabs
+example in AndroidLiquidGlass, revision 65ab177e90e5c1d8c62e70cf7755841982da65f6.
+Source: https://github.com/Kyant0/AndroidLiquidGlass
+License: Apache-2.0. Future Fast adapts the geometry, colors and input semantics.

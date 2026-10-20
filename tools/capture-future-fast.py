@@ -1,9 +1,12 @@
 """Capture actual preview screens without importing credentials or sample servers."""
 from pathlib import Path
 import re
+import base64
+import io
 import subprocess
 import time
 import xml.etree.ElementTree as ET
+from PIL import Image
 
 OUT = Path("smoke")
 OUT.mkdir(exist_ok=True)
@@ -38,27 +41,80 @@ def snapshot(name):
         time.sleep(2)
     else:
         (OUT / "failure-screen.png").write_bytes(adb("exec-out", "screencap", "-p"))
-        (OUT / "failure-logcat.txt").write_bytes(adb("logcat", "-d", "-t", "1500"))
-        (OUT / "failure-window.txt").write_bytes(adb("shell", "dumpsys", "window"))
+        preview("failure", OUT / "failure-screen.png")
+        log = adb("logcat", "-d", "-t", "1500")
+        window = adb("shell", "dumpsys", "window")
+        (OUT / "failure-logcat.txt").write_bytes(log)
+        (OUT / "failure-window.txt").write_bytes(window)
+        # This fixture is a fresh install with no imported credentials or profiles.
+        print("FF_FAILURE_DIAGNOSTICS", flush=True)
+        for line in log.decode(errors="replace").splitlines():
+            if any(key in line for key in ("AndroidRuntime", "ANR", "am_anr", "FATAL", "InputDispatcher", "tech.future.fast")):
+                print(line, flush=True)
+        for line in window.decode(errors="replace").splitlines():
+            if any(key in line for key in ("mCurrentFocus", "mFocusedApp", "mDisplayFrozen")):
+                print(line, flush=True)
         raise AssertionError("No accessibility root after locale restart")
     (OUT / (name + ".xml")).write_bytes(xml)
     return ET.fromstring(xml)
 
+def preview(name, path):
+    # Full-resolution originals remain in the normal smoke artifact.
+    with Image.open(path) as frame:
+        frame.thumbnail((432, 960))
+        output = io.BytesIO()
+        frame.convert("RGB").save(output, format="JPEG", quality=80)
+    print("FF_PREVIEW:" + name + ":" + base64.b64encode(output.getvalue()).decode(), flush=True)
+
 def capture(name):
     root = snapshot(name)
-    (OUT / (name + ".png")).write_bytes(adb("exec-out", "screencap", "-p"))
+    path = OUT / (name + ".png")
+    path.write_bytes(adb("exec-out", "screencap", "-p"))
+    preview(name, path)
     return root
 
 def tap_label(label):
     root = snapshot("navigation")
     for node in root.iter("node"):
-        text = "\n".join(n.get("text", "") + "\n" + n.get("content-desc", "") for n in node.iter("node"))
-        if label in text and node.get("clickable") == "true":
+        matches = any(label in (n.get("text", ""), n.get("content-desc", "")) for n in node.iter("node"))
+        if matches and node.get("clickable") == "true":
             x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds", "")))
             adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
             time.sleep(1)
             return
     raise AssertionError("Missing clickable label: " + label)
+
+def navigation(root, selected):
+    tabs = {}
+    for node in root.iter("node"):
+        texts = [n.get("text") for n in node.iter("node") if n.get("text")]
+        # Compose exposes the selected Tab as focusable/selected but not clickable in XML.
+        if node.get("focusable") == "true" and len(texts) == 1 and texts[0] in ("连接", "节点", "AI 分流"):
+            previous = tabs.get(texts[0])
+            top = int(re.findall(r"\d+", node.get("bounds", ""))[1])
+            if previous is None or top > int(re.findall(r"\d+", previous.get("bounds", ""))[1]):
+                tabs[texts[0]] = node
+    assert set(tabs) == {"连接", "节点", "AI 分流"}, "Navigation disappeared: " + str(tabs.keys())
+    assert len({re.findall(r"\d+", n.get("bounds", ""))[1] for n in tabs.values()}) == 1
+    assert [label for label, node in tabs.items() if node.get("selected") == "true"] == [selected]
+    return {label: tuple(map(int, re.findall(r"\d+", node.get("bounds", "")))) for label, node in tabs.items()}
+
+def tap_bounds(bounds):
+    x1, y1, x2, y2 = bounds
+    adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
+
+def focus_tab(label, direction, activation):
+    # Exercise actual input focus, not accessibility focus or coordinate taps.
+    for attempt in range(24):
+        root = snapshot("focus-" + direction)
+        focused = [n for n in root.iter("node") if n.get("focused") == "true"]
+        if any(label in " ".join(c.get("text", "") for c in n.iter("node")) for n in focused):
+            adb("shell", "input", "keyevent", activation)
+            time.sleep(1)
+            navigation(snapshot("activated-" + direction), label)
+            return
+        adb("shell", "input", "keyevent", direction)
+    raise AssertionError("Keyboard/D-pad cannot focus navigation tab: " + label)
 
 adb("shell", "svc", "power", "stayon", "true")
 adb("shell", "input", "keyevent", "224")
@@ -67,7 +123,43 @@ adb("shell", "cmd", "locale", "set-app-locales", "tech.future.fast", "--user", "
 adb("shell", "am", "force-stop", "tech.future.fast")
 adb("shell", "am", "start", "-W", "-n", "tech.future.fast/com.v2ray.ang.ui.main.MainActivity")
 time.sleep(8)
-capture("future-fast-home")
+nav_bounds = navigation(capture("future-fast-home"), "连接")
+tap_label("节点")
+assert navigation(capture("future-fast-nodes"), "节点") == nav_bounds
+tap_label("AI 分流")
+assert navigation(capture("future-fast-ai"), "AI 分流") == nav_bounds
+tap_label("连接")
+assert navigation(snapshot("roundtrip-home"), "连接") == nav_bounds
+
+# Keep system animations enabled and record real lens movement, including drag/release.
+recording = subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "22",
+                              "--bit-rate", "4000000", "/sdcard/future-fast-navigation.mp4"])
+time.sleep(1)
+for label in ("节点", "AI 分流", "连接", "AI 分流", "节点", "连接"):
+    tap_bounds(nav_bounds[label])
+    time.sleep(0.8)
+home = nav_bounds["连接"]
+ai = nav_bounds["AI 分流"]
+adb("shell", "input", "swipe", str((home[0]+home[2])//2), str((home[1]+home[3])//2),
+    str((ai[0]+ai[2])//2), str((ai[1]+ai[3])//2), "900")
+time.sleep(1)
+navigation(snapshot("drag-to-ai"), "AI 分流")
+recording.wait(timeout=30)
+(OUT / "future-fast-navigation.mp4").write_bytes(adb("exec-out", "cat", "/sdcard/future-fast-navigation.mp4"))
+tap_label("连接")
+
+# A theme configuration change recreates the Activity. Restore the selected destination.
+tap_label("节点")
+adb("shell", "cmd", "uimode", "night", "yes")
+time.sleep(2)
+navigation(capture("future-fast-nodes-dark"), "节点")
+adb("shell", "cmd", "uimode", "night", "no")
+time.sleep(2)
+navigation(snapshot("nodes-restored-light"), "节点")
+focus_tab("AI 分流", "KEYCODE_TAB", "KEYCODE_ENTER")
+focus_tab("连接", "KEYCODE_DPAD_LEFT", "KEYCODE_DPAD_CENTER")
+focus_tab("节点", "KEYCODE_TAB", "KEYCODE_SPACE")
+tap_label("连接")
 tap_label("自动管理")
 capture("future-fast-automation")
 adb("shell", "input", "keyevent", "4")
@@ -80,6 +172,13 @@ adb("shell", "cmd", "uimode", "night", "yes")
 time.sleep(2)
 capture("future-fast-home-dark")
 adb("shell", "cmd", "uimode", "night", "no")
+time.sleep(2)
+adb("shell", "settings", "put", "system", "font_scale", "1.5")
+time.sleep(2)
+navigation(capture("future-fast-large-font"), "连接")
+adb("shell", "settings", "put", "system", "font_scale", "1.0")
+time.sleep(2)
+navigation(snapshot("font-restored-home"), "连接")
 adb("shell", "pidof", "tech.future.fast")
 crash = adb("logcat", "-b", "crash", "-d")
 (OUT / "crash.log").write_bytes(crash)
