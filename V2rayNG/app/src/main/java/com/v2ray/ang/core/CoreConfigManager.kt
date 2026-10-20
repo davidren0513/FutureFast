@@ -5,6 +5,7 @@ import android.text.TextUtils
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.R
 import com.v2ray.ang.dto.ConfigResult
 import com.v2ray.ang.dto.CoreConfigContext
 import com.v2ray.ang.dto.V2rayConfig
@@ -40,6 +41,10 @@ object CoreConfigManager {
                     errorMessage = "Failed to build config context"
                 )
             if (configContext.isCustom) {
+                if (SettingsManager.futureFastAiTargets().isNotEmpty()) {
+                    return ConfigResult(status = false, guid = guid,
+                        errorMessage = context.getString(R.string.ff_custom_ai_unsupported))
+                }
                 return buildV2rayCustomConfig(configContext)
             }
             return toConfigResult(configContext, buildUnifiedConfig(configContext))
@@ -597,7 +602,7 @@ object CoreConfigManager {
     private fun collectUserRuleDomainsByTag(tag: String): ArrayList<String> {
         val domain = ArrayList<String>()
 
-        val rulesetItems = MmkvManager.decodeRoutingRulesets()
+        val rulesetItems = SettingsManager.futureFastAiRules() + MmkvManager.decodeRoutingRulesets().orEmpty()
         rulesetItems?.forEach { key ->
             if (key.enabled && key.outboundTag == tag && !key.domain.isNullOrEmpty()) {
                 key.domain?.forEach {
@@ -1174,7 +1179,7 @@ object CoreConfigManager {
             MmkvManager.decodeSettingsString(AppConfig.PREF_ROUTING_DOMAIN_STRATEGY)
                 ?: "AsIs"
 
-        val rulesetItems = MmkvManager.decodeRoutingRulesets()
+        val rulesetItems = SettingsManager.futureFastAiRules() + MmkvManager.decodeRoutingRulesets().orEmpty()
         rulesetItems?.forEach { key ->
             appendRoutingUserRule(configContext, key, v2rayConfig, policyGroupBalancerTags)
         }
@@ -1236,7 +1241,7 @@ object CoreConfigManager {
             && v2rayConfig.outbounds.none { it.tag == outboundTag }
         ) {
             LogUtil.w(AppConfig.TAG, "Outbound tag '$outboundTag' not found, falling back to '${AppConfig.TAG_PROXY}'")
-            rule.outboundTag = AppConfig.TAG_PROXY
+            rule.outboundTag = if (outboundTag.startsWith("future-fast-ai-")) AppConfig.TAG_BLOCKED else AppConfig.TAG_PROXY
         }
 
         v2rayConfig.routing.rules.add(rule)

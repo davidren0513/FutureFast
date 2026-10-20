@@ -460,6 +460,12 @@ object CoreServiceManager {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             val serviceControl = serviceControl?.get() ?: return
             when (intent?.getIntExtra("key", 0)) {
+                AppConfig.MSG_FUTURE_FAST_QUERY_STATE -> {
+                    if (isOrderedBroadcast) {
+                        resultCode = Activity.RESULT_OK
+                        resultData = if (isRunning()) "running" else "stopped"
+                    }
+                }
                 AppConfig.MSG_REGISTER_CLIENT -> {
                     if (isRunning()) {
                         MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_RUNNING, "")

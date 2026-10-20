@@ -16,6 +16,32 @@ import com.v2ray.ang.util.LogUtil
 import java.io.Serializable
 
 object MessageHelper {
+    /** Null means no trustworthy answer; an absent daemon leaves the initial result unchanged. */
+    suspend fun queryFutureFastRunning(ctx: Context): Boolean? =
+        kotlinx.coroutines.withTimeoutOrNull(3000L) {
+            kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+                val receiver = object : BroadcastReceiver() {
+                    override fun onReceive(context: Context?, intent: Intent?) {
+                        val running = when {
+                            resultCode == Activity.RESULT_CANCELED -> false
+                            resultCode == Activity.RESULT_OK && resultData == "running" -> true
+                            resultCode == Activity.RESULT_OK && resultData == "stopped" -> false
+                            else -> null
+                        }
+                        if (continuation.isActive) continuation.resumeWith(Result.success(running))
+                    }
+                }
+                try {
+                    ctx.sendOrderedBroadcast(
+                        messageIntent(AppConfig.BROADCAST_ACTION_SERVICE, AppConfig.MSG_FUTURE_FAST_QUERY_STATE, ""),
+                        null, receiver, null, Activity.RESULT_CANCELED, null, null
+                    )
+                } catch (error: Exception) {
+                    LogUtil.e(AppConfig.TAG, "Future Fast: query daemon state failed", error)
+                    if (continuation.isActive) continuation.resumeWith(Result.success(null))
+                }
+            }
+        }
     const val EXTRA_REQUEST_ID = "requestId"
 
     /**

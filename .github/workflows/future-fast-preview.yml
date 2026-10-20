@@ -1,0 +1,99 @@
+name: Future Fast Preview APK
+
+on:
+  push:
+    branches: [feature/future-fast-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: future-fast-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact source and submodules
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Check patch whitespace
+        run: git diff --check 118cf5bc7d0b290947b0827f5ad03e73018d8e5d HEAD -- . ':!docs/UPSTREAM_README.md'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          log-accepted-android-sdk-licenses: false
+          cmdline-tools-version: '14742923'
+          packages: 'platforms;android-37.0 build-tools;37.0.0 platform-tools'
+      - name: Install NDK and build HEV inputs
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 --install 'ndk;30.0.16248370' > /dev/null || test -d "$ANDROID_HOME/ndk/30.0.16248370"
+          export NDK_HOME="$ANDROID_HOME/ndk/30.0.16248370"
+          echo "NDK_HOME=$NDK_HOME" >> "$GITHUB_ENV"
+          bash compile-hevtun.sh
+          cp -r libs V2rayNG/app/
+      - name: Resolve exact native-core release tag
+        run: |
+          expected=$(git ls-tree HEAD AndroidLibXrayLite | awk '{print $3}')
+          actual=$(git -C AndroidLibXrayLite rev-parse HEAD)
+          test "$expected" = "$actual"
+          tag=$(git -C AndroidLibXrayLite describe --tags --exact-match HEAD)
+          echo "XRAY_TAG=$tag" >> "$GITHUB_ENV"
+      - name: Download pinned native-core AAR
+        uses: robinraju/release-downloader@v1.13
+        with:
+          repository: 2dust/AndroidLibXrayLite
+          tag: ${{ env.XRAY_TAG }}
+          fileName: libv2ray.aar
+          out-file-path: V2rayNG/app/libs/
+      - name: Set up Java
+        uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Test and assemble installable debug APKs
+        working-directory: V2rayNG
+        run: |
+          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          ./gradlew :app:testPlaystoreDebugUnitTest :app:compilePlaystoreDebugKotlin :app:assemblePlaystoreDebug :app:assembleFdroidDebug
+      - name: Verify packaged native libraries and create checksums
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, zipfile
+          files = sorted(Path('V2rayNG/app/build/outputs/apk').rglob('*.apk'))
+          assert files, 'No APKs produced'
+          lines = []
+          for path in files:
+              with zipfile.ZipFile(path) as apk:
+                  entries = set(apk.namelist())
+                  abis = {name.split('/')[1] for name in entries if name.startswith('lib/') and name.endswith('/libgojni.so')}
+                  assert abis, f'Missing Xray JNI: {path}'
+                  for abi in abis:
+                      for library in ('libgojni.so', 'libhev-socks5-tunnel.so', 'libhevsockstun.so'):
+                          assert f'lib/{abi}/{library}' in entries, f'{path}: {abi}/{library} missing'
+              lines.append(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}')
+          Path('SHA256SUMS.txt').write_text('\n'.join(lines) + '\n')
+          PY
+      - name: Upload Future Fast preview
+        uses: actions/upload-artifact@v7
+        with:
+          name: FutureFast-0.1.0-preview
+          if-no-files-found: error
+          path: |
+            V2rayNG/app/build/outputs/apk/**/debug/*.apk
+            SHA256SUMS.txt
+          retention-days: 14
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: FutureFast-test-reports
+          path: V2rayNG/app/build/reports/tests
+          if-no-files-found: ignore

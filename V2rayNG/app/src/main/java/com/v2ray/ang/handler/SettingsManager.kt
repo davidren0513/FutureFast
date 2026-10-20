@@ -34,6 +34,34 @@ import kotlin.random.Random
 
 object SettingsManager {
 
+    fun futureFastNodes(): List<com.v2ray.ang.dto.FutureFastNodeReference> =
+        MmkvManager.decodeAllServerList().mapNotNull { guid ->
+            val profile = MmkvManager.decodeServerConfig(guid) ?: return@mapNotNull null
+            if (profile.configType == com.v2ray.ang.enums.EConfigType.CUSTOM ||
+                profile.configType == com.v2ray.ang.enums.EConfigType.POLICYGROUP ||
+                profile.configType == com.v2ray.ang.enums.EConfigType.PROXYCHAIN) return@mapNotNull null
+            com.v2ray.ang.dto.FutureFastNodeReference(guid, profile.subscriptionId, profile.remarks)
+        }
+
+    fun futureFastAiTargets(): List<Pair<com.v2ray.ang.dto.FutureFastAiService, String?>> {
+        val preferences = MmkvManager.futureFastPreferences()
+        if (!preferences.aiEnabled) return emptyList()
+        val nodes = futureFastNodes()
+        return com.v2ray.ang.dto.FutureFastAiService.entries.mapNotNull { service ->
+            val reference = preferences.aiNodes[service.name] ?: return@mapNotNull null
+            service to com.v2ray.ang.dto.FutureFastPolicy.resolveNode(reference, nodes)
+        }
+    }
+
+    fun futureFastAiRules(): List<com.v2ray.ang.dto.entities.RulesetItem> =
+        futureFastAiTargets().map { (service, guid) ->
+            com.v2ray.ang.dto.entities.RulesetItem(
+                id = service.tag,
+                domain = service.domains.map { "domain:$it" },
+                outboundTag = if (guid == null) AppConfig.TAG_BLOCKED else service.tag,
+            )
+        }
+
     @Volatile
     private var runtimeSocksPort: Int? = null
 

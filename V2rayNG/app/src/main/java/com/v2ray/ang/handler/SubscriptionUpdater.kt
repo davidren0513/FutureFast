@@ -1,6 +1,5 @@
 package com.v2ray.ang.handler
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -166,24 +165,20 @@ object SubscriptionUpdater {
     class UpdateTask(context: Context, params: WorkerParameters) :
         CoroutineWorker(context, params) {
 
-        @SuppressLint("MissingPermission")
-        override suspend fun doWork(): Result {
+        override suspend fun doWork(): Result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             val subId = inputData.getString(KEY_SUB_ID)
-            LogUtil.i(AppConfig.TAG, "SubscriptionUpdater update starting via Service: $subId")
+            LogUtil.i(AppConfig.TAG, "SubscriptionUpdater: scheduled update subId=$subId")
 
             if (subId.isNullOrEmpty()) {
                 LogUtil.w(AppConfig.TAG, "SubscriptionUpdater: missing subId in worker input")
-                return Result.success()
+                return@withContext Result.success()
             }
 
-            updateLastUpdatedAndReschedule(applicationContext, subId)
-
-            MessageHelper.sendMsg2SubscriptionService(
-                applicationContext,
-                SubscriptionUpdateMessage(AppConfig.MSG_SUB_UPDATE_START, true, listOf(subId))
-            )
-
-            return Result.success()
+            val subscription = MmkvManager.decodeSubscription(subId) ?: return@withContext Result.success()
+            if (!subscription.autoUpdate || !subscription.enabled || subscription.url.isBlank()) return@withContext Result.success()
+            // The updater records lastUpdated only after a valid subscription has been imported.
+            val result = AngConfigManager.updateConfigViaSub(com.v2ray.ang.dto.entities.SubscriptionCache(subId, subscription))
+            if (result.failureCount > 0) Result.retry() else Result.success()
         }
     }
 }

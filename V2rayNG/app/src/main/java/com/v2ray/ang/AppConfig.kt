@@ -127,8 +127,8 @@ object AppConfig {
     const val GITHUB_RAW_URL = "https://raw.githubusercontent.com"
     const val GITHUB_DOWNLOAD_URL = "$GITHUB_URL/%s/releases/latest/download"
     const val ANDROID_PACKAGE_NAME_LIST_URL = "$GITHUB_RAW_URL/2dust/androidpackagenamelist/master/proxy.txt"
-    const val APP_URL = "$GITHUB_URL/2dust/v2rayNG"
-    const val APP_API_URL = "https://api.github.com/repos/2dust/v2rayNG/releases"
+    const val APP_URL = "$GITHUB_URL/davidren0513/v2rayNG-for-justmysocks"
+    const val APP_API_URL = "https://api.github.com/repos/davidren0513/v2rayNG-for-justmysocks/releases"
     const val APP_ISSUES_URL = "$APP_URL/issues"
     const val APP_WIKI_MODE = "$APP_URL/wiki/Mode"
     const val APP_PRIVACY_POLICY = "$GITHUB_RAW_URL/2dust/v2rayNG/master/CR.md"
@@ -178,6 +178,7 @@ object AppConfig {
 
     /** Message constants for communication. */
     const val MSG_REGISTER_CLIENT = 1
+    const val MSG_FUTURE_FAST_QUERY_STATE = 90
     const val MSG_STATE_RUNNING = 11
     const val MSG_STATE_NOT_RUNNING = 12
     const val MSG_UNREGISTER_CLIENT = 2

@@ -54,6 +54,8 @@ import kotlinx.coroutines.withContext
 
 class MainActivity : HelperBaseComponentActivity() {
 
+    private val futureFastViewModel: FutureFastViewModel by viewModels()
+
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(application, MainRepository(application as AngApplication))
     }
@@ -100,11 +102,17 @@ class MainActivity : HelperBaseComponentActivity() {
     @Composable
     override fun ScreenContent() {
         BackHandler { moveTaskToBack(false) }
-        MainScreen(
+        FutureFastScreen(
             mainViewModel = mainViewModel,
+            futureViewModel = futureFastViewModel,
             onAction = { action ->
                 when (action) {
-                    MainAction.ToggleService -> handleFabAction()
+                    MainAction.ToggleService -> {
+                        if (mainViewModel.uiState.value.isRunning) handleFabAction()
+                        else futureFastViewModel.prepareConnection {
+                            if (!mainViewModel.uiState.value.isRunning) requestServiceStart()
+                        }
+                    }
                     MainAction.TestCurrentServer -> handleLayoutTestClick()
                     MainAction.ImportQRcode -> importQRcode()
                     MainAction.ImportClipboard -> importClipboard()

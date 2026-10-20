@@ -44,7 +44,11 @@ object CoreConfigContextBuilder {
 
         // Step 2: Resolve all non-builtin routing outbound tags.
         val routingResolvedOutbounds = resolveRoutingOutbounds()
-        val resolvedOutbounds = listOf(primaryResolvedOutbound) + routingResolvedOutbounds
+        val aiResolvedOutbounds = SettingsManager.futureFastAiTargets().mapNotNull { (service, targetGuid) ->
+            val profile = targetGuid?.let(MmkvManager::decodeServerConfig) ?: return@mapNotNull null
+            resolveOutbound(service.tag, profile)
+        }
+        val resolvedOutbounds = listOf(primaryResolvedOutbound) + routingResolvedOutbounds + aiResolvedOutbounds
         val fallbackResolvedOutbounds = resolveFallbackOutbounds(resolvedOutbounds)
         val routingDomainRules = collectRoutingDomainRulesForDns()
 
@@ -226,7 +230,7 @@ object CoreConfigContextBuilder {
      * outbounds are normalized into three tags only: proxy / direct / block.
      */
     private fun collectRoutingDomainRulesForDns(): List<CoreConfigContext.RoutingDomainRule> {
-        val rulesetItems = MmkvManager.decodeRoutingRulesets() ?: return emptyList()
+        val rulesetItems = SettingsManager.futureFastAiRules() + MmkvManager.decodeRoutingRulesets().orEmpty()
         val result = mutableListOf<CoreConfigContext.RoutingDomainRule>()
 
         rulesetItems
