@@ -1,7 +1,7 @@
 # JMS 定制设计与开发计划
 
 维护者：David Ren
-项目：https://github.com/davidren0513/v2rayNG-for-justmysocks
+项目：https://github.com/davidren0513/FutureFast
 资料核对日期：2026-10-20
 
 ## 状态与范围
@@ -75,7 +75,7 @@
 
 > v2rayNG for Just My Socks
 > 定制设计与维护：David Ren
-> GitHub：davidren0513/v2rayNG-for-justmysocks
+> GitHub：davidren0513/FutureFast
 
 上游小字：
 

@@ -2,7 +2,7 @@
 
 由 **David Ren** 维护的 v2rayNG 定制分支，面向 Just My Socks（JMS）使用场景。
 
-- 项目地址：https://github.com/davidren0513/v2rayNG-for-justmysocks
+- 项目地址：https://github.com/davidren0513/FutureFast
 - 上游项目：[2dust/v2rayNG](https://github.com/2dust/v2rayNG)
 - 原项目作者与贡献者：**2dust 及 v2rayNG contributors**
 - 开源许可证：[GNU GPL v3](LICENSE)；保留上游署名、版权声明与第三方许可证。
@@ -12,7 +12,7 @@
 
 首个预览版本为 **Future Fast 0.1.0**。当前功能分支已加入液态玻璃首页、订阅定时更新设置、断开时真实延迟测速与节点优选、AI 独立节点和作者信息；以 GitHub Actions 构建结果为准。尚未完成真机和真实 JMS 订阅验证。
 
-预览 APK 由 [Future Fast Preview APK](https://github.com/davidren0513/v2rayNG-for-justmysocks/actions/workflows/future-fast-preview.yml) 构建并以 Artifact 提供。预览版使用测试签名，应用 ID 为 tech.future.fast，可与原版并存。自动更新和 AI 分流默认关闭，需用户配置。上游 APK 与签名不代表本项目。
+预览 APK 由 [Future Fast Preview APK](https://github.com/davidren0513/FutureFast/actions/workflows/future-fast-preview.yml) 构建并以 Artifact 提供。预览版使用测试签名，应用 ID 为 tech.future.fast，可与原版并存。自动更新和 AI 分流默认关闭，需用户配置。上游 APK 与签名不代表本项目。
 
 ## 已确定的改造方向
 
