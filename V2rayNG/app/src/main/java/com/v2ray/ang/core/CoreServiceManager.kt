@@ -127,12 +127,16 @@ object CoreServiceManager {
 
     @Throws(Exception::class)
     private fun launchCore(service: Service, vpnInterface: ParcelFileDescriptor?, isReload: Boolean = false) {
+        // Every entry point (including tiles and boot) invalidates background selections before
+        // reading the selected profile. MMKV serializes this with optimizer publication.
+        MmkvManager.updateFutureFastPreferences {
+            it.copy(connectionRevision = it.connectionRevision + 1, connectionRequestedAt = System.currentTimeMillis())
+        }
         val guid = MmkvManager.getSelectServer() ?: error("No server selected")
         val config = MmkvManager.decodeServerConfig(guid) ?: error("Failed to decode server config")
 
         LogUtil.i(AppConfig.TAG, "StartCore-Manager: Starting core loop for ${config.remarks}")
         val result = CoreConfigManager.getV2rayConfig(service, guid)
-        LogUtil.d(AppConfig.TAG, result.content)
         if (!result.status) {
             error(result.errorMessage.ifBlank { "Failed to get V2Ray config" })
         }
@@ -460,6 +464,12 @@ object CoreServiceManager {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             val serviceControl = serviceControl?.get() ?: return
             when (intent?.getIntExtra("key", 0)) {
+                AppConfig.MSG_FUTURE_FAST_QUERY_STATE -> {
+                    if (isOrderedBroadcast) {
+                        resultCode = Activity.RESULT_OK
+                        resultData = if (isRunning()) "running" else "busy"
+                    }
+                }
                 AppConfig.MSG_REGISTER_CLIENT -> {
                     if (isRunning()) {
                         MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_RUNNING, "")

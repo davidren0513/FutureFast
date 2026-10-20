@@ -35,6 +35,7 @@ data class MainUiState(
 sealed interface MainAction {
     data object Initialize : MainAction
     data object RefreshGroups : MainAction
+    data object RefreshSelectedServer : MainAction
     data object ToggleService : MainAction
     data object TestCurrentServer : MainAction
     data object TestAllServers : MainAction

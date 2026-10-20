@@ -482,7 +482,7 @@ object AngConfigManager {
                     return SubscriptionUpdateResult(failureCount = 1)
                 }
             }
-            LogUtil.i(AppConfig.TAG, url)
+            LogUtil.i(AppConfig.TAG, "Updating subscription id=${it.guid}")
             val userAgent = it.subscription.userAgent
             val requestHeaders = it.subscription.requestHeaders
             val proxyUsername = SettingsManager.getSocksUsername()
@@ -523,6 +523,10 @@ object AngConfigManager {
                 return SubscriptionUpdateResult(failureCount = 1)
             }
 
+            if (com.v2ray.ang.dto.FutureFastPolicy.unsupportedSubscription(configText)) {
+                LogUtil.w(AppConfig.TAG, "Unsupported subscription response id=${it.guid}")
+                return SubscriptionUpdateResult(failureCount = 1)
+            }
             val count = parseConfigViaSub(configText, it.guid, false)
             if (count > 0) {
                 it.subscription.lastUpdated = System.currentTimeMillis()

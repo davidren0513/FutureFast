@@ -36,6 +36,44 @@ internal class ProfileStorageException(message: String) : IllegalStateException(
 
 object MmkvManager {
 
+    /** Atomically reject a background result after a user selection or connection request. */
+    fun selectFutureFastServer(guid: String, previousSelection: String?, revision: Long): Boolean =
+        withProfileIndexLock {
+            synchronized(settingsStorage) {
+                settingsStorage.lock()
+                try {
+                    val preferences = futureFastPreferences()
+                    if (getSelectServer() != previousSelection || preferences.connectionRevision != revision ||
+                        decodeServerConfig(guid) == null) return@withProfileIndexLock false
+                    setSelectServer(guid)
+                    true
+                } finally {
+                    settingsStorage.unlock()
+                }
+            }
+        }
+
+    fun futureFastPreferences(): com.v2ray.ang.dto.FutureFastPreferences =
+        decodeSettingsString("future_fast_preferences_v1")?.let {
+            JsonUtil.fromJsonSafe(it, com.v2ray.ang.dto.FutureFastPreferences::class.java)
+        } ?: com.v2ray.ang.dto.FutureFastPreferences()
+
+    fun updateFutureFastPreferences(
+        transform: (com.v2ray.ang.dto.FutureFastPreferences) -> com.v2ray.ang.dto.FutureFastPreferences
+    ): com.v2ray.ang.dto.FutureFastPreferences = synchronized(settingsStorage) {
+        settingsStorage.lock()
+        try {
+            val next = transform(futureFastPreferences())
+            requireStorageWrite(
+                settingsStorage.encode("future_fast_preferences_v1", JsonUtil.toJson(next)),
+                "Failed to write Future Fast preferences"
+            )
+            next
+        } finally {
+            settingsStorage.unlock()
+        }
+    }
+
     //region private
 
     private const val ID_MAIN = "MAIN"

@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,7 +31,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.R
-import com.v2ray.ang.core.CoreNativeManager
 import com.v2ray.ang.ui.base.BaseComponentActivity
 import com.v2ray.ang.ui.compose.AppTopBar
 import com.v2ray.ang.ui.compose.NavigationBarsSpacer
@@ -61,10 +61,9 @@ fun AboutScreen(
     onTranslatorsClick: () -> Unit
 ) {
     val context = LocalContext.current
-    var showOssDialog by remember { mutableStateOf(false) }
+    var showOssDialog by rememberSaveable { mutableStateOf(false) }
 
-    val libVersion = CoreNativeManager.getLibVersion()
-    val versionText = "v${BuildConfig.VERSION_NAME} ($libVersion)"
+    val versionText = "v${BuildConfig.VERSION_NAME}"
     val appIdText = BuildConfig.APPLICATION_ID
 
     Scaffold(
@@ -82,6 +81,20 @@ fun AboutScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp))
+            Text(stringResource(R.string.ff_maintainer), style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            Text(stringResource(R.string.ff_disclaimer), style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
+            Text(stringResource(R.string.ff_independent), style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            Text(stringResource(R.string.ff_upstream), style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            TextButton(onClick = { Utils.openUri(context, "https://github.com/2dust/v2rayNG") },
+                modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text(stringResource(R.string.ff_upstream_link))
+            }
             SettingsMenuItem(
                 icon = painterResource(R.drawable.ic_source_code_24dp),
                 title = stringResource(R.string.title_source_code),

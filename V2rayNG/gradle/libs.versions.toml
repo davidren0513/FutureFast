@@ -22,7 +22,9 @@ camerax = "1.6.2"
 composeBom = "2026.09.00"
 reorderable = "3.1.0"
 coil = "3.6.3"
+backdrop = "2.0.1"
 [libraries]
+kyant-backdrop = { module = "io.github.kyant0:backdrop", version.ref = "backdrop" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 gradle-license-plugin = { module = "com.jaredsburrows:gradle-license-plugin", version.ref = "gradleLicensePlugin" }
