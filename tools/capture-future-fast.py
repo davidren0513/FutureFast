@@ -12,14 +12,28 @@ def adb(*args):
     return subprocess.check_output(["adb", *args], timeout=35)
 
 def snapshot(name):
-    adb("shell", "uiautomator", "dump", "/sdcard/ff-window.xml")
-    xml = adb("shell", "cat", "/sdcard/ff-window.xml")
+    # A locale change recreates the activity and temporarily detaches its accessibility root.
+    for attempt in range(4):
+        adb("shell", "input", "keyevent", "224")
+        adb("shell", "rm", "-f", "/sdcard/ff-window.xml")
+        adb("shell", "uiautomator", "dump", "/sdcard/ff-window.xml")
+        result = subprocess.run(["adb", "shell", "cat", "/sdcard/ff-window.xml"], capture_output=True, timeout=10)
+        if result.returncode == 0 and b"<hierarchy" in result.stdout:
+            xml = result.stdout
+            break
+        time.sleep(2)
+    else:
+        (OUT / "failure-screen.png").write_bytes(adb("exec-out", "screencap", "-p"))
+        (OUT / "failure-logcat.txt").write_bytes(adb("logcat", "-d", "-t", "1500"))
+        (OUT / "failure-window.txt").write_bytes(adb("shell", "dumpsys", "window"))
+        raise AssertionError("No accessibility root after locale restart")
     (OUT / (name + ".xml")).write_bytes(xml)
     return ET.fromstring(xml)
 
 def capture(name):
+    root = snapshot(name)
     (OUT / (name + ".png")).write_bytes(adb("exec-out", "screencap", "-p"))
-    return snapshot(name)
+    return root
 
 def tap_label(label):
     root = snapshot("navigation")
@@ -32,10 +46,13 @@ def tap_label(label):
             return
     raise AssertionError("Missing clickable label: " + label)
 
+adb("shell", "svc", "power", "stayon", "true")
+adb("shell", "input", "keyevent", "224")
+adb("shell", "wm", "dismiss-keyguard")
 adb("shell", "cmd", "locale", "set-app-locales", "tech.future.fast", "--user", "0", "--locales", "zh-CN")
 adb("shell", "am", "force-stop", "tech.future.fast")
 adb("shell", "am", "start", "-W", "-n", "tech.future.fast/com.v2ray.ang.ui.main.MainActivity")
-time.sleep(3)
+time.sleep(8)
 capture("future-fast-home")
 tap_label("自动管理")
 capture("future-fast-automation")
