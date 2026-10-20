@@ -1,14 +1,19 @@
 package com.v2ray.ang.ui.main
 
 import android.os.Build
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
@@ -23,21 +28,179 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
+import com.kyant.backdrop.shadow.Shadow
+import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.LocalDarkTheme
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+/**
+ * A persistent, accessible navigation surface. Lens/velocity deformation follows Kyant's
+ * Apache-2.0 LiquidBottomTabs example (revision 65ab177e90e5c1d8c62e70cf7755841982da65f6).
+ * The blue optical coating and taller icon/label layout match Future Fast's reference.
+ * Only presentation/gesture state lives here; the screen owns the selected destination.
+ */
+@Composable
+internal fun FutureFastNavigation(backdrop: Backdrop, page: String, onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier) {
+    val tabs = remember { listOf("home", "nodes", "ai") }
+    val titles = listOf(R.string.ff_home, R.string.ff_nodes, R.string.ff_ai)
+    val interactions = remember { tabs.map { MutableInteractionSource() } }
+    val homePressed by interactions[0].collectIsPressedAsState()
+    val nodesPressed by interactions[1].collectIsPressedAsState()
+    val aiPressed by interactions[2].collectIsPressedAsState()
+    val latestPage by rememberUpdatedState(page)
+    val latestSelect by rememberUpdatedState(onSelect)
+    val index = tabs.indexOf(page).coerceAtLeast(0)
+    val position = remember { Animatable(index.toFloat()) }
+    var dragPosition by remember { mutableStateOf<Float?>(null) }
+    val press by animateFloatAsState(
+        if (homePressed || nodesPressed || aiPressed || dragPosition != null) 1f else 0f,
+        spring(dampingRatio = 0.65f, stiffness = 380f), label = "navigation-press")
+    LaunchedEffect(index, dragPosition) {
+        val drag = dragPosition
+        if (drag != null) position.snapTo(drag)
+        else position.animateTo(index.toFloat(), spring(dampingRatio = 0.72f,
+            stiffness = 420f, visibilityThreshold = 0.001f))
+    }
+    val dark = LocalDarkTheme.current
+    val ink = LocalContentColor.current
+    val barBackdrop = rememberLayerBackdrop()
+    val lensBackdrop = rememberCombinedBackdrop(backdrop, barBackdrop)
+    BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
+        val tabWidth = (maxWidth - 12.dp) / 3
+        val tabPx = with(LocalDensity.current) { tabWidth.toPx() }
+        val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        Box(Modifier.fillMaxWidth().height(76.dp)
+            .graphicsLayer {
+                scaleX = 1f + press * 0.018f
+                scaleY = 1f + press * 0.035f
+            }
+            .layerBackdrop(barBackdrop)
+            .navigationGlass(backdrop, selected = false, press = { press })
+            .clearAndSetSemantics {})
+        // A single lens moves between destinations; it is never recreated per selected tab.
+        Box(Modifier.padding(horizontal = 6.dp).width(tabWidth).height(64.dp)
+            .graphicsLayer {
+                translationX = position.value * tabPx * if (rtl) -1f else 1f
+                val stretch = (abs(position.velocity) * 0.018f).coerceIn(0f, 0.16f)
+                scaleX = 1f + press * 0.075f + stretch
+                scaleY = 1f + press * 0.09f - stretch * 0.35f
+            }
+            .navigationGlass(lensBackdrop, selected = true, press = { press })
+            .clearAndSetSemantics {})
+        Row(Modifier.fillMaxWidth().selectableGroup()
+            .pointerInput(tabPx, rtl) {
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        dragPosition = tabs.indexOf(latestPage).coerceAtLeast(0).toFloat()
+                    },
+                    onDragEnd = {
+                        val target = futureFastDragDestination(dragPosition ?: index.toFloat())
+                        dragPosition = null
+                        latestSelect(target)
+                    },
+                    onDragCancel = { dragPosition = null },
+                    onHorizontalDrag = { change, amount ->
+                        change.consume()
+                        if (tabPx > 0f) dragPosition = ((dragPosition ?: index.toFloat()) +
+                            amount / tabPx * if (rtl) -1f else 1f).coerceIn(0f, 2f)
+                    })
+            }
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            tabs.forEachIndexed { tabIndex, id ->
+                key(id) {
+                    val selected = page == id
+                    val focused by interactions[tabIndex].collectIsFocusedAsState()
+                    val tint by animateColorAsState(
+                        if (selected) Color.White else ink.copy(alpha = if (dark) 0.82f else 0.68f),
+                        tween(180), label = "navigation-ink")
+                    Column(Modifier.weight(1f).heightIn(min = 64.dp)
+                        .clip(CircleShape)
+                        .border(if (focused) 2.dp else 0.dp,
+                            if (focused) Color(0xFF287BFA) else Color.Transparent, CircleShape)
+                        .selectable(selected, interactionSource = interactions[tabIndex],
+                            indication = null, role = Role.Tab, onClick = { onSelect(id) })
+                        .semantics(mergeDescendants = true) {}
+                        .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)) {
+                        GlassIcon(when (id) {
+                            "home" -> GlassGlyph.LINK
+                            "nodes" -> GlassGlyph.NODES
+                            else -> GlassGlyph.AI
+                        }, Modifier.size(25.dp), tint)
+                        Text(stringResource(titles[tabIndex]), color = tint,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
+                    }
+                }
+            }
+        }
+    }
+}
+
+internal fun futureFastDragDestination(position: Float): String = when {
+    !position.isFinite() -> "home"
+    position.roundToInt().coerceIn(0, 2) == 0 -> "home"
+    position.roundToInt().coerceIn(0, 2) == 1 -> "nodes"
+    else -> "ai"
+}
+
+@Composable
+private fun Modifier.navigationGlass(backdrop: Backdrop, selected: Boolean,
+    press: () -> Float): Modifier {
+    val dark = LocalDarkTheme.current
+    val coating = if (selected) Brush.verticalGradient(listOf(
+        Color(0xFF6AD9FF).copy(alpha = 0.78f), Color(0xFF2584FA).copy(alpha = 0.85f),
+        Color(0xFF3268EC).copy(alpha = 0.78f)))
+    else Brush.verticalGradient(listOf(
+        Color.White.copy(alpha = if (dark) 0.13f else 0.52f),
+        Color(0xFFC5E2FF).copy(alpha = if (dark) 0.08f else 0.16f),
+        Color.White.copy(alpha = if (dark) 0.07f else 0.35f)))
+    // RuntimeShader lenses require Android 13. Remove this fallback when minSdk >= 33.
+    // Older devices keep the same moving capsule and accessible tabs without invoking the shader.
+    val optical = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        drawBackdrop(backdrop = backdrop, shape = { CircleShape }, effects = {
+            vibrancy()
+            blur((if (selected) 1f else 8f).dp.toPx())
+            lens((if (selected) 10f + press() * 6f else 24f).dp.toPx(),
+                (if (selected) 18f + press() * 12f else 24f).dp.toPx(),
+                chromaticAberration = selected, depthEffect = true)
+        }, highlight = { Highlight(width = if (selected) 1.5.dp else 1.dp, blurRadius = 0.6.dp) },
+            shadow = { Shadow(radius = if (selected) 8.dp else 16.dp,
+                color = Color(0xFF486BA8), alpha = if (dark) 0.28f else 0.16f) },
+            innerShadow = { InnerShadow(radius = if (selected) 6.dp else 10.dp,
+                color = Color(0xFF4D73BC).copy(alpha = 0.15f), offset = DpOffset(0.dp, 2.dp)) },
+            onDrawSurface = { drawRect(coating) })
+    } else background(coating, CircleShape)
+    return optical.border(1.dp, Brush.linearGradient(listOf(
+        Color.White.copy(alpha = 0.85f), Color.White.copy(alpha = 0.12f),
+        Color(0xFFBDEBFF).copy(alpha = 0.7f))), CircleShape)
+}
 
 /** Decorative geometry lives in the sampled backdrop so the lens refracts actual content. */
 @Composable

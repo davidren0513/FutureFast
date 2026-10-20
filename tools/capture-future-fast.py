@@ -60,6 +60,34 @@ def tap_label(label):
             return
     raise AssertionError("Missing clickable label: " + label)
 
+def navigation(root, selected):
+    tabs = {}
+    for node in root.iter("node"):
+        texts = [n.get("text") for n in node.iter("node") if n.get("text")]
+        if node.get("clickable") == "true" and len(texts) == 1 and texts[0] in ("首页", "节点", "AI 分流"):
+            assert texts[0] not in tabs, "Duplicate navigation target: " + texts[0]
+            tabs[texts[0]] = node
+    assert set(tabs) == {"首页", "节点", "AI 分流"}, "Navigation disappeared: " + str(tabs.keys())
+    assert [label for label, node in tabs.items() if node.get("selected") == "true"] == [selected]
+    return {label: tuple(map(int, re.findall(r"\d+", node.get("bounds", "")))) for label, node in tabs.items()}
+
+def tap_bounds(bounds):
+    x1, y1, x2, y2 = bounds
+    adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
+
+def focus_tab(label, direction, activation):
+    # Exercise actual input focus, not accessibility focus or coordinate taps.
+    for attempt in range(24):
+        root = snapshot("focus-" + direction)
+        focused = [n for n in root.iter("node") if n.get("focused") == "true"]
+        if any(label in " ".join(c.get("text", "") for c in n.iter("node")) for n in focused):
+            adb("shell", "input", "keyevent", activation)
+            time.sleep(1)
+            navigation(snapshot("activated-" + direction), label)
+            return
+        adb("shell", "input", "keyevent", direction)
+    raise AssertionError("Keyboard/D-pad cannot focus navigation tab: " + label)
+
 adb("shell", "svc", "power", "stayon", "true")
 adb("shell", "input", "keyevent", "224")
 adb("shell", "wm", "dismiss-keyguard")
@@ -67,7 +95,41 @@ adb("shell", "cmd", "locale", "set-app-locales", "tech.future.fast", "--user", "
 adb("shell", "am", "force-stop", "tech.future.fast")
 adb("shell", "am", "start", "-W", "-n", "tech.future.fast/com.v2ray.ang.ui.main.MainActivity")
 time.sleep(8)
-capture("future-fast-home")
+nav_bounds = navigation(capture("future-fast-home"), "首页")
+tap_label("节点")
+assert navigation(capture("future-fast-nodes"), "节点") == nav_bounds
+tap_label("AI 分流")
+assert navigation(capture("future-fast-ai"), "AI 分流") == nav_bounds
+tap_label("首页")
+assert navigation(snapshot("roundtrip-home"), "首页") == nav_bounds
+
+# Keep system animations enabled and record real lens movement, including drag/release.
+recording = subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "22",
+                              "--bit-rate", "4000000", "/sdcard/future-fast-navigation.mp4"])
+time.sleep(1)
+for label in ("节点", "AI 分流", "首页", "AI 分流", "节点", "首页"):
+    tap_bounds(nav_bounds[label])
+    time.sleep(0.8)
+home = nav_bounds["首页"]
+ai = nav_bounds["AI 分流"]
+adb("shell", "input", "swipe", str((home[0]+home[2])//2), str((home[1]+home[3])//2),
+    str((ai[0]+ai[2])//2), str((ai[1]+ai[3])//2), "900")
+time.sleep(1)
+navigation(snapshot("drag-to-ai"), "AI 分流")
+recording.wait(timeout=30)
+(OUT / "future-fast-navigation.mp4").write_bytes(adb("exec-out", "cat", "/sdcard/future-fast-navigation.mp4"))
+tap_label("首页")
+
+# A theme configuration change recreates the Activity. Restore the selected destination.
+tap_label("节点")
+adb("shell", "cmd", "uimode", "night", "yes")
+time.sleep(2)
+navigation(capture("future-fast-nodes-dark"), "节点")
+adb("shell", "cmd", "uimode", "night", "no")
+time.sleep(2)
+navigation(snapshot("nodes-restored-light"), "节点")
+focus_tab("AI 分流", "KEYCODE_TAB", "KEYCODE_ENTER")
+focus_tab("首页", "KEYCODE_DPAD_LEFT", "KEYCODE_DPAD_CENTER")
 tap_label("自动管理")
 capture("future-fast-automation")
 adb("shell", "input", "keyevent", "4")

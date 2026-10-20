@@ -17,7 +17,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -62,42 +61,22 @@ fun FutureFastScreen(
     CompositionLocalProvider(LocalContentColor provides ink) {
         Box(Modifier.fillMaxSize()) {
             FutureFastBackdrop(backdrop, dark)
-            if (page == "nodes") {
-                Column(Modifier.fillMaxSize().navigationBarsPadding()) {
-                    Row(Modifier.statusBarsPadding().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { page = "home" }) { Text(stringResource(R.string.ff_home)) }
-                        Text(stringResource(R.string.ff_node_management), fontWeight = FontWeight.SemiBold)
-                    }
-                    Box(Modifier.weight(1f)) { MainScreen(mainViewModel, onAction, onNavigate) }
-                }
-            } else {
                 Scaffold(containerColor = Color.Transparent, contentColor = ink,
                     bottomBar = {
                         if (page != "automation") {
-                            Row(Modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp)
-                                .fillMaxWidth().glass(backdrop).padding(5.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                listOf("home" to R.string.ff_home, "nodes" to R.string.ff_nodes, "ai" to R.string.ff_ai).forEach { (id, title) ->
-                                    val selected = page == id
-                                    Column(Modifier.weight(1f).clip(RoundedCornerShape(32.dp))
-                                        .background(if (selected) Brush.linearGradient(listOf(Color(0xFF55CFFF), accent, Color(0xFF226AFF)))
-                                            else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)))
-                                        .border(1.dp, if (selected) Color.White.copy(alpha = 0.85f) else Color.Transparent, RoundedCornerShape(32.dp))
-                                        .selectable(selected, role = Role.Tab, onClick = { page = id })
-                                        .semantics(mergeDescendants = true) {}
-                                        .padding(vertical = 10.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        GlassIcon(when (id) { "home" -> GlassGlyph.LINK; "nodes" -> GlassGlyph.NODES; else -> GlassGlyph.AI },
-                                            tint = if (selected) Color.White else ink.copy(alpha = 0.6f))
-                                        Text(stringResource(title), style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (selected) Color.White else ink.copy(alpha = 0.7f))
-                                    }
-                                }
-                            }
+                            FutureFastNavigation(backdrop, page, onSelect = { page = it },
+                                modifier = Modifier.navigationBarsPadding()
+                                    .padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth())
                         }
                     }
                 ) { padding ->
+                    if (page == "nodes") {
+                        // Keep the same shell and navigation alive for all three primary tabs.
+                        // Consume the shell insets before the node screen's nested Scaffold.
+                        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+                            MainScreen(mainViewModel, onAction, onNavigate)
+                        }
+                    } else {
                     Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
                         .verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(if (page == "home") 12.dp else 16.dp)) {
