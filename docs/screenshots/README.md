@@ -1,13 +1,22 @@
-# FutureFast 0.1.1 实际截图
+# Future Fast 0.4.3 实际截图
 
-这些图片由 Android 35 x86_64 模拟器安装实际 APK 后，通过 adb screencap 获取，没有使用设计稿替代运行结果。
+2026-10-21 使用实际 ARM64 APK 在 Android 15 / API 35 模拟器运行，通过 `adb screencap` 获取。截图没有用设计稿替代，没有添加演示节点、虚构延迟或连接状态，也没有裁掉系统界面。
 
-- 源码：`b8b1da71c1c3a537303a03bdd28155f51106e05a`
-- 构建：[39401539475](https://github.com/davidren0513/FutureFast/actions/runs/39401539475)
-- 环境：Pixel 6 模拟器，简体中文，空节点与默认关闭的自动管理 / AI 分流设置。
-- `home.png`：连接首页。
-- `automation.png`：触摸首页自动管理卡片后进入的页面。
-- `ai.png`：触摸底部 AI 分流入口后进入的页面。
-- `home-dark.png`：系统切换为深色后的首页。
+- 对应源码：[0b7afabf](https://github.com/davidren0513/FutureFast/commit/0b7afabfbfcd396f8e2b1a9a8c1771524ecc4f24)，与本地测试提交 `b40bacbb` 的文件树相同。
+- 安装包：`FutureFast_0.4.3_arm64-v8a.apk`，SHA-256 为 `ce014e82e3447341bbc178b72be961f9172f9beb0ca87925dd5d7972a6ea785b`。
+- 下载：[v0.4.3 Release](https://github.com/davidren0513/FutureFast/releases/tag/v0.4.3)。
+- 环境：API 35 ARM64，可丢弃模拟器，720 × 1600 像素，简体中文；清空测试应用数据后同意首次使用条款，没有导入订阅或真实节点。
+- 配置：自动优选、订阅自动更新与 AI 分流均为首次安装的默认关闭状态；未建立 VPN 连接。
 
-完整 UIAutomator XML 和 crash buffer 保存在该次构建的 `FutureFast-emulator-smoke` artifact。截图验证外观，不代替 TalkBack、键盘、真实订阅或网络连接验证；详见 [VALIDATION.md](../VALIDATION.md)。
+| 文件 | 画面 |
+| --- | --- |
+| `home.png` | 浅色连接首页 |
+| `nodes.png` | Default 分组、空节点列表及导入入口 |
+| `ai.png` | ChatGPT、Claude、Gemini 独立线路入口 |
+| `automation.png` | 订阅自动更新、自动优选及间隔设置 |
+| `settings.png` | 订阅管理入口和统一玻璃开关 |
+| `home-dark.png` | 系统深色模式的连接首页 |
+
+首页、节点及 AI 分流为固定一屏布局，节点列表内部滚动；设置与自动管理页面可以滚动。静态图片不能展示完整的水珠拖动和涟漪动画。
+
+截图验证画面，不代替真实网络连接、TalkBack、键盘、后台调度或物理手机性能测试。当前版本的验证范围见 [验证索引](../VALIDATION.md) 和 [0.4.3 记录](../RELEASE_0.4.3.md)。
