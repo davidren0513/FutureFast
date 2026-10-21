@@ -1,4 +1,4 @@
-import { common } from '@kit.AbilityKit';
+import { common, Want } from '@kit.AbilityKit';
 import { vpnExtension } from '@kit.NetworkKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BUNDLE_NAME, emptyProfile, importShadowsocks, ProxyProfile, validateProfile } from './Profile';
@@ -70,7 +70,7 @@ export class ClientModel {
     if (this.context === undefined || this.actionBusy || !this.ready) { return; }
     this.actionBusy = true;
     const context = this.context;
-    const want = { bundleName: BUNDLE_NAME, abilityName: 'FutureFastVpnAbility' };
+    const want: Want = { bundleName: BUNDLE_NAME, abilityName: 'FutureFastVpnAbility' };
     try {
       if (this.canDisconnect) {
         this.state = 'stopping';

@@ -5,7 +5,11 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 command -v cargo >/dev/null
 CC="$OHOS_NDK_HOME/llvm/bin/aarch64-unknown-linux-ohos-clang"
 export CC_aarch64_unknown_linux_ohos="$CC"
+export CXX_aarch64_unknown_linux_ohos="$OHOS_NDK_HOME/llvm/bin/aarch64-unknown-linux-ohos-clang++"
 export AR_aarch64_unknown_linux_ohos="$OHOS_NDK_HOME/llvm/bin/llvm-ar"
+export PATH="$OHOS_NDK_HOME/build-tools/cmake/bin:$PATH"
+export CMAKE_TOOLCHAIN_FILE_aarch64_unknown_linux_ohos="$OHOS_NDK_HOME/build/cmake/ohos.toolchain.cmake"
+export CMAKE_GENERATOR=Ninja
 export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER="$CC"
 export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_RUSTFLAGS='-C relocation-model=pic'
 cargo build --manifest-path "$ROOT/HarmonyOS/native/shadowsocks/Cargo.toml" \

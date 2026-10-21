@@ -1,6 +1,8 @@
 node_modules
 oh_modules
 .hvigor/
+.cxx/
+**/.cxx/
 build/
 **/build/
 local.properties

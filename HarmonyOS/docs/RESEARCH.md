@@ -29,6 +29,8 @@ Rust 官方提供 OHOS 目标平台，优先试验可原生编译的 Shadowsocks
 
 `d4b0c942cbc8dfc7f28f49c0f33648f332d43c3a51399f2463655c2ef1f2c659`
 
-解包得到 API 20、6.0.0.47、Beta1 标签组件。HEV 已生成 ARM64 ELF。Hvigor 的实际失败原因是 SDK 许可尚未接受，并缺 Previewer 组件；未绕过许可检查。许可原文另存于本机 `deliverables/harmony-prototype/OpenHarmony-SDK-LICENSE.txt` 供开发者确认。
+解包得到 API 20、6.0.0.47、Beta1 标签组件。HEV 已生成 ARM64 ELF。最初 Hvigor 因 SDK 许可未确认及缺 Previewer 而停止。用户于 2026-10-21 明确同意原文后，已登记标准许可接受记录并由官方 SDK Manager 安装 Previewer。许可原文另存于本机 `deliverables/harmony-prototype/OpenHarmony-SDK-LICENSE.txt`。
 
-下一道有效性门槛依次是完整原生链接、ArkTS 编译、HAP 打包、正式 HarmonyOS SDK 适配、开发者签名和真机 VPN 上网测试。当前尚未越过这些门槛，不应据源码推断手机可用。
+完整原生链接、ArkTS 编译、未签名 HAP 打包及包内 ELF/依赖核对已通过。Rust 本机测试覆盖实际加密 TCP/UDP 往返，但不覆盖鸿蒙 TUN 和系统接管。
+
+下一道有效性门槛是正式 HarmonyOS SDK 适配、开发者签名和真机 VPN 上网测试。HDC 当前未检测到设备；产物元数据明确为 OpenHarmony / API 20 / Beta1 / default 设备类型，不应直接声称 HarmonyOS 手机可安装或联网。

@@ -5,4 +5,6 @@
 - `scripts/build-hev.sh` appends a first-party readiness-query function to a temporary build copy. It does not replace the upstream license or modify the Android dependency checkout.
 - The first-party HarmonyOS application and native adapters follow this repository's GPL-3.0 license. No signing credentials or SDK binaries are distributed in this source directory.
 
-A distributable HAP has not yet been produced. Before distribution, collect the complete licenses of the exact linked Rust and HEV dependency versions into the package and verify platform signing requirements.
+`scripts/collect-licenses.py` collects the locked ARM64 normal dependency graph notices, HEV notices, repository GPL text and LLVM/libc++ notice into `resources/rawfile/THIRD_PARTY_LICENSES.txt`. Rust standard library copyright and license files are included alongside it. The published shadowsocks-service crate omits its root MIT file; `shadowsocks-rust.txt` is copied from its exact source commit `ab388c7466d21f979430e33cc9ef10e22fb05955`.
+
+An unsigned experimental HAP has been built with these notices. It is not a signed HarmonyOS phone release. Source is available in this directory with the lockfile, build scripts and pinned HEV submodule in the parent repository. Platform compatibility, signing and device testing remain required.

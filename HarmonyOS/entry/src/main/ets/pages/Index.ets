@@ -8,7 +8,7 @@ struct Index {
   @State model: ClientModel = new ClientModel();
   @State link: string = '';
 
-  aboutToAppear(): void { this.model.initialize(getContext(this) as common.UIAbilityContext); }
+  aboutToAppear(): void { this.model.initialize(this.getUIContext().getHostContext() as common.UIAbilityContext); }
   aboutToDisappear(): void { this.model.dispose(); }
 
   private status(): Resource {

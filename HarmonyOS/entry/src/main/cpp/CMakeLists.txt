@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(futurefast LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_SKIP_RPATH TRUE)
 add_library(ffhev SHARED IMPORTED)
 set_target_properties(ffhev PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/../../../libs/arm64-v8a/libffhev.so")
 add_library(ffss STATIC IMPORTED)
