@@ -1,0 +1,7 @@
+{
+  "name": "entry",
+  "version": "0.1.0",
+  "dependencies": {
+    "libfuturefast.so": "file:./src/main/cpp/types/libfuturefast"
+  }
+}

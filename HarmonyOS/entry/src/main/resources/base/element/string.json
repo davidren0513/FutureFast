@@ -1,0 +1,144 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "Future Fast"
+    },
+    {
+      "name": "module_desc",
+      "value": "鸿蒙原生代理联网实验版"
+    },
+    {
+      "name": "prototype",
+      "value": "HarmonyOS · 连接原型"
+    },
+    {
+      "name": "headline",
+      "value": "连接，自在。"
+    },
+    {
+      "name": "idle",
+      "value": "未连接"
+    },
+    {
+      "name": "starting",
+      "value": "正在请求 VPN 连接"
+    },
+    {
+      "name": "tunnel",
+      "value": "隧道已建立"
+    },
+    {
+      "name": "stopping",
+      "value": "正在断开"
+    },
+    {
+      "name": "error",
+      "value": "连接未完成，请检查设置或重试"
+    },
+    {
+      "name": "connect",
+      "value": "保存并连接"
+    },
+    {
+      "name": "disconnect",
+      "value": "断开连接"
+    },
+    {
+      "name": "power",
+      "value": "⏻"
+    },
+    {
+      "name": "node",
+      "value": "Shadowsocks 节点"
+    },
+    {
+      "name": "name",
+      "value": "名称（可选）"
+    },
+    {
+      "name": "host",
+      "value": "服务器地址"
+    },
+    {
+      "name": "port",
+      "value": "端口"
+    },
+    {
+      "name": "password",
+      "value": "密码"
+    },
+    {
+      "name": "method",
+      "value": "加密方式"
+    },
+    {
+      "name": "import_title",
+      "value": "导入节点链接"
+    },
+    {
+      "name": "link_hint",
+      "value": "粘贴 ss:// 链接"
+    },
+    {
+      "name": "import_action",
+      "value": "导入"
+    },
+    {
+      "name": "import_failed",
+      "value": "链接无效或含暂不支持的协议、加密或插件，请使用手动设置。"
+    },
+    {
+      "name": "import_ok",
+      "value": "节点已导入，连接时保存。"
+    },
+    {
+      "name": "field_error",
+      "value": "请填写有效的服务器地址、端口、密码和加密方式。"
+    },
+    {
+      "name": "save_error",
+      "value": "配置保存失败，请重试。"
+    },
+    {
+      "name": "core_error",
+      "value": "代理核心未能启动，请检查配置或重试。"
+    },
+    {
+      "name": "permission_error",
+      "value": "VPN 未获系统确认，请重新连接并确认授权。"
+    },
+    {
+      "name": "local_note",
+      "value": "实验版先支持 Shadowsocks AEAD 节点，不包含订阅、VLESS、VMess、插件或 AI 分流。"
+    },
+    {
+      "name": "session_note",
+      "value": "隧道建立不代表远端节点一定可用，请在浏览器中测试访问。"
+    },
+    {
+      "name": "terms",
+      "value": "我已阅读并同意使用条款"
+    },
+    {
+      "name": "terms_body",
+      "value": "本应用仅为网络连接配置与管理工具，不提供代理节点、代理订阅或账号服务。请仅使用合法、获授权的服务，遵守所在地及相关适用法律法规。"
+    },
+    {
+      "name": "terms_required",
+      "value": "请先阅读并同意使用条款。"
+    },
+    {
+      "name": "terms_title",
+      "value": "使用条款"
+    },
+    {
+      "name": "credit",
+      "value": "David Ren · 基于开源 Shadowsocks 与 HEV 核心"
+    },
+    {
+      "name": "unknown",
+      "value": "连接状态待确认，可断开后重连"
+    }
+  ]
+}
