@@ -1,0 +1,16 @@
+node_modules
+oh_modules
+.hvigor/
+build/
+**/build/
+local.properties
+**/libs/
+native/target/
+native/shadowsocks/target/
+native/out/
+**/*.p12
+**/*.p7b
+**/*.cer
+**/*.hap
+**/*.app
+build-profile.local.json5

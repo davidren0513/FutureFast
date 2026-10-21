@@ -1,0 +1,8 @@
+{
+  "modelVersion": "6.0.0",
+  "name": "future-fast-harmony",
+  "version": "0.1.0",
+  "description": "Future Fast native networking prototype",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {}
+}
